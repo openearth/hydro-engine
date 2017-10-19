@@ -1,28 +1,17 @@
-# Copyright 2015 Google Inc. All Rights Reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-# [START app]
 import logging
 import json
+import requests
+import zipfile
+import io
 
 from flask import Flask
 from flask import Response
 from flask import request
 
+
 import ee
 
-import config
+from . import config
 
 app = Flask(__name__)
 
@@ -32,38 +21,81 @@ EE_CREDENTIALS = ee.ServiceAccountCredentials(config.EE_ACCOUNT, config.EE_PRIVA
 
 ee.Initialize(EE_CREDENTIALS)
 
+# HydroBASINS level 5
 basins = ee.FeatureCollection('ft:1IHRHUiWkgPXOzwNweeM89CzPYSfokjLlz7_0OTQl')
 
-def traverse_up(basins_source):
-    filter_next_up = ee.Filter.equals(leftField='NEXT_DOWN', rightField='HYBAS_ID')
-    
-    join = ee.Join.inner('primary', 'secondary').apply(basins, basins_source, filter_next_up)
-  
-    existing = basins_source.aggregate_array('HYBAS_ID')
-    
-    def get_parent(feature):
-        return feature.get('primary')
-  
-    return join.map(get_parent)
+# HydroSHEDS rivers, 15s
+rivers = ee.FeatureCollection('users/gena/HydroEngine/riv_15s_lev05')
 
-@app.route('/get_catchment', methods = ['GET', 'POST'])
-def api_get_catchment():
+# graph index
+index = ee.FeatureCollection("users/gena/hybas_lev05_v1c_index")
+
+
+def get_upstream_catchments(basin_source) -> ee.FeatureCollection:
+    hybas_id = ee.Number(basin_source.get('HYBAS_ID'))
+    upstream_ids = index.filter(ee.Filter.eq('hybas_id', hybas_id)).aggregate_array('parent_from')
+    upstream_basins = basins.filter(ee.Filter.inList('HYBAS_ID', upstream_ids)).merge(
+        ee.FeatureCollection([basin_source]))
+
+    return upstream_basins
+
+
+@app.route('/get_catchments', methods=['GET', 'POST'])
+def api_get_catchments():
     bounds = ee.Geometry(request.json['bounds'])
-    depth = int(request.json['depth'])
 
-    current = basins.filterBounds(bounds)
+    selection = basins.filterBounds(bounds)
 
-    fc = current
-    for i in range(depth):
-        current = traverse_up(current)
+    # for every selection, get and merge upstream
+    upstream_catchments = ee.FeatureCollection(selection.map(get_upstream_catchments)).flatten().distinct('HYBAS_ID')
 
-        fc = fc.merge(current)
-
-    
-    results = fc.geometry().dissolve(100)
-  
     data = {
-        'catchmen_boundary': results.getInfo()
+        'catchment_boundaries': upstream_catchments.getInfo()
+    }
+
+    resp = Response(json.dumps(data), status=200, mimetype='application/json')
+
+    return resp
+
+
+@app.route('/get_rivers', methods=['GET', 'POST'])
+def api_get_rivers():
+    bounds = ee.Geometry(request.json['bounds'])
+    filter_upstream = request.json['filter_upstream']
+
+    selection = basins.filterBounds(bounds)
+
+    # for every selection, get and merge upstream catchments
+    upstream_catchments = ee.FeatureCollection(selection.map(get_upstream_catchments)).flatten().distinct('HYBAS_ID')
+
+    # get ids
+    upstream_catchment_ids = ee.List(upstream_catchments.aggregate_array('HYBAS_ID'))
+
+    # query rivers
+    upstream_rivers = rivers \
+      .filter(ee.Filter.inList('hybas_id', upstream_catchment_ids)) \
+      .filter(ee.Filter.gte('up_cells', filter_upstream)) \
+      .select(['arcid', 'up_cells', 'hybas_id'])
+
+    url = upstream_rivers.getDownloadURL('JSON')
+
+    data = {
+        'catchment_rivers': url
+    }
+
+    resp = Response(json.dumps(data), status=200, mimetype='application/json')
+
+    return resp
+
+    response = requests.get(url)
+
+    return Response(response.content, status=200, mimetype='application/octet-stream')
+
+
+    zip = zipfile.ZipFile(io.BytesIO(response.content))
+
+    data = {
+        'catchment_rivers': zip.namelist()
     }
 
     resp = Response(json.dumps(data), status=200, mimetype='application/json')
@@ -72,8 +104,8 @@ def api_get_catchment():
 
 
 @app.route('/')
-def hello():
-    return 'Welcom to Hydro Earth Engine. Currently, only RESTful API is supported. Work in progress ...'
+def root():
+    return 'Welcome to Hydro Earth Engine. Currently, only RESTful API is supported. Work in progress ...'
 
 
 @app.errorhandler(500)
@@ -84,9 +116,9 @@ def server_error(e):
     See logs for full stacktrace.
     """.format(e), 500
 
+
 if __name__ == '__main__':
     # This is used when running locally. Gunicorn is used to run the
     # application on Google App Engine. See entrypoint in app.yaml.
     app.run(host='127.0.0.1', port=8080, debug=True)
 # [END app]
-
