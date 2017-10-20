@@ -8,17 +8,19 @@ from flask import Flask
 from flask import Response
 from flask import request
 
-
 import ee
 
-from . import config
+if __name__ == '__main__':
+    import config
+else:
+    from . import config
+
 
 app = Flask(__name__)
 
 # Initialize the EE API.
 # Use our App Engine service account's credentials.
 EE_CREDENTIALS = ee.ServiceAccountCredentials(config.EE_ACCOUNT, config.EE_PRIVATE_KEY_FILE)
-
 ee.Initialize(EE_CREDENTIALS)
 
 # HydroBASINS level 5
@@ -28,7 +30,7 @@ basins = ee.FeatureCollection('ft:1IHRHUiWkgPXOzwNweeM89CzPYSfokjLlz7_0OTQl')
 rivers = ee.FeatureCollection('users/gena/HydroEngine/riv_15s_lev05')
 
 # graph index
-index = ee.FeatureCollection("users/gena/hybas_lev05_v1c_index")
+index = ee.FeatureCollection("users/gena/HydroEngine/hybas_lev05_v1c_index")
 
 
 def get_upstream_catchments(basin_source) -> ee.FeatureCollection:
@@ -42,6 +44,8 @@ def get_upstream_catchments(basin_source) -> ee.FeatureCollection:
 
 @app.route('/get_catchments', methods=['GET', 'POST'])
 def api_get_catchments():
+    print(request)
+
     bounds = ee.Geometry(request.json['bounds'])
 
     selection = basins.filterBounds(bounds)
@@ -49,10 +53,13 @@ def api_get_catchments():
     # for every selection, get and merge upstream
     upstream_catchments = ee.FeatureCollection(selection.map(get_upstream_catchments)).flatten().distinct('HYBAS_ID')
 
-    data = {
-        'catchment_boundaries': upstream_catchments.getInfo()
-    }
+    # dissolve output
+    # TODO
 
+    # get GeoJSON
+    data = upstream_catchments.getInfo()  # TODO: use ZIP to prevent 5000 feature limit
+
+    # fill response
     resp = Response(json.dumps(data), status=200, mimetype='application/json')
 
     return resp
@@ -61,7 +68,6 @@ def api_get_catchments():
 @app.route('/get_rivers', methods=['GET', 'POST'])
 def api_get_rivers():
     bounds = ee.Geometry(request.json['bounds'])
-    filter_upstream = request.json['filter_upstream']
 
     selection = basins.filterBounds(bounds)
 
@@ -73,34 +79,33 @@ def api_get_rivers():
 
     # query rivers
     upstream_rivers = rivers \
-      .filter(ee.Filter.inList('hybas_id', upstream_catchment_ids)) \
-      .filter(ee.Filter.gte('up_cells', filter_upstream)) \
-      .select(['arcid', 'up_cells', 'hybas_id'])
+        .filter(ee.Filter.inList('hybas_id', upstream_catchment_ids)) \
+        .select(['arcid', 'up_cells', 'hybas_id'])
 
+    # filter upstream branches
+    if 'filter_upstream_gt' in request.json:
+        filter_upstream = int(request.json['filter_upstream_gt'])
+        print('Filtering upstream branches, limiting by {0} number of cells'.format(filter_upstream))
+        upstream_rivers = upstream_rivers.filter(ee.Filter.gte('up_cells', filter_upstream))
+
+    # create response
     url = upstream_rivers.getDownloadURL('JSON')
 
-    data = {
-        'catchment_rivers': url
-    }
+    data = {'catchment_rivers_url': url}
+    return Response(json.dumps(data), status=200, mimetype='application/json')
 
-    resp = Response(json.dumps(data), status=200, mimetype='application/json')
+    # data = upstream_rivers.getInfo()  # TODO: use ZIP to prevent 5000 features limit
+    # return Response(json.dumps(data), status=200, mimetype='application/octet-stream')
 
-    return resp
-
-    response = requests.get(url)
-
-    return Response(response.content, status=200, mimetype='application/octet-stream')
-
-
-    zip = zipfile.ZipFile(io.BytesIO(response.content))
-
-    data = {
-        'catchment_rivers': zip.namelist()
-    }
-
-    resp = Response(json.dumps(data), status=200, mimetype='application/json')
-
-    return resp
+    # zip = zipfile.ZipFile(io.BytesIO(response.content))
+    #
+    # data = {
+    #     'catchment_rivers': zip.namelist()
+    # }
+    #
+    # resp = Response(json.dumps(data), status=200, mimetype='application/json')
+    #
+    # return resp
 
 
 @app.route('/')

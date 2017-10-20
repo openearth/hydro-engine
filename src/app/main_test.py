@@ -1,6 +1,9 @@
+import unittest
+
 from . import main
 
-class TestClient:
+
+class TestClient(unittest.TestCase):
     def setUp(self):
         main.app.testing = True
         self.client = main.app.test_client()
@@ -11,20 +14,32 @@ class TestClient:
         assert 'Welcome' in r.data.decode('utf-8')
 
     def test_get_catchments(self):
-        r = self.client.get('/')
-        assert r.status_code == 200
+        request = '''{
+            "bounds":
+                {"type": "Polygon", "coordinates":
+                    [[[5.995833, 4.387513999999975], [7.704733999999998, 4.387513999999975],
+                      [7.704733999999998, 7.925567000000025], [5.995833, 7.925567000000025],
+                      [5.995833, 4.387513999999975]]]},
+            "type": "get_catchments",
+            "dissolve": true
+        }'''
 
-        # r = client.get('/get_catchments')
-        # assert r.status_code == 200
-        # assert 'Welcome' in r.data.decode('utf-8')
+        r = self.client.post('/get_catchments', data=request, content_type='application/json')
+        assert r.status_code == 200
 
     def test_get_rivers(self):
-        r = self.client.get('/')
-        assert r.status_code == 200
+        request = '''{
+            "bounds":
+                {"type": "Polygon", "coordinates":
+                    [[[5.995833, 4.387513999999975], [7.704733999999998, 4.387513999999975],
+                      [7.704733999999998, 7.925567000000025], [5.995833, 7.925567000000025],
+                      [5.995833, 4.387513999999975]]]},
+            "type": "get_rivers",
+            "filter_upstream_gt": 1000
+        }'''
 
-        # r = client.get('/get_catchments')
-        # assert r.status_code == 200
-        # assert 'Welcome' in r.data.decode('utf-8')
+        r = self.client.post('/get_rivers', data=request, content_type='application/json')
+        assert r.status_code == 200
 
     def test_get_raster(self):
         r = self.client.get('/')
@@ -33,3 +48,7 @@ class TestClient:
         # r = client.get('/get_catchments')
         # assert r.status_code == 200
         # assert 'Welcome' in r.data.decode('utf-8')
+
+
+if __name__ == '__main__':
+    unittest.main()
