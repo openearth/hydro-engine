@@ -119,10 +119,14 @@ def api_get_raster():
     # for every selection, get and merge upstream
     upstream_catchments = ee.FeatureCollection(selection.map(get_upstream_catchments)).flatten().distinct('HYBAS_ID')
 
-    region = upstream_catchments.geometry(cell_size).dissolve(cell_size)
+    # region = upstream_catchments.geometry(cell_size).dissolve(cell_size)
+
+    # skip dissolve - much faster version
+    region = upstream_catchments.geometry().bounds()
 
     raster_assets = {
         'dem': 'USGS/SRTMGL1_003',
+        'hand': 'users/gena/global-hand/hand-100',
         'FirstZoneCapacity': 'users/gena/HydroEngine/static/FirstZoneCapacity',
         'FirstZoneKsatVer': 'users/gena/HydroEngine/static/FirstZoneKsatVer',
         'FirstZoneMinCapacity': 'users/gena/HydroEngine/static/FirstZoneMinCapacity',
@@ -147,10 +151,15 @@ def api_get_raster():
         'LAI12': 'users/gena/HydroEngine/static/LAI/LAI00000-012'
     }
 
-    asset = ee.Image(raster_assets[variable]).clip(region)
+    if variable == 'hand':
+        image = ee.ImageCollection(raster_assets[variable]).mosaic()
+    else:
+        image = ee.Image(raster_assets[variable])
+
+    image = image.clip(region)
 
     # create response
-    url = ee.Image(asset).getDownloadURL({
+    url = image.getDownloadURL({
         'name': 'variable',
         'format': 'tif',
         'crs': crs,
