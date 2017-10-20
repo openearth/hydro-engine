@@ -28,28 +28,16 @@ Supported functionality:
 * Querying raster:
 
    dem [m] - in meters, source: 30m SRTM v4
-
    hand [m] - Height Above the Nearest Drainage (![HAND](http://global-hand.appspot.com))
-
    FirstZoneCapacity [-] - ?
-
    FirstZoneKsatVer [-] - ?
-
    FirstZoneMinCapacity [-] - ?
-
    InfiltCapSoil [-] - ?
-
    M [-] - ?
-
    PathFrac [-] - ?
-
    WaterFrac [-] - ?
-
    thetaS [-] - ?
-
    soil_type [-] - soil type, based on ?
-
    landuse [-] - land use type, based on MODIS 500m
-
    LAI01...LAI12 - leaf area index monthly climatology, source: ![eartH2Observe](http://www.earth2observe.eu/)
 
