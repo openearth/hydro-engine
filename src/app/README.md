@@ -1,6 +1,6 @@
 Deploy app, optionally: -v <version> - a bit faster:
 
-gcloud app deploy -v test
+gcloud app deploy --project hydro-engine -v test
 
 Browse: 
 
