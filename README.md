@@ -25,8 +25,7 @@ Supported functionality:
 
 * Query upstream catchments as a single or multiple polygons. Source: ![HydroBASINS](http://www.hydrosheds.org/page/hydrobasins)
 * Query upstream drainage network as a line geometry. Source: ![HydroSHEDS](http://hydrosheds.org)
-* Querying raster:
-
+* Querying raster variables:
    dem [m] - in meters, source: 30m SRTM v4
    hand [m] - Height Above the Nearest Drainage (![HAND](http://global-hand.appspot.com))
    FirstZoneCapacity [-] - ?
