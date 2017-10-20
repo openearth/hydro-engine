@@ -5,7 +5,9 @@ The command-line Python tool can be installed using the following commands:
 > pip install hydroengine
 ```
 
-Once the package is installed, you can use ```hydroengine``` command to download input data needed for your hydrological model. Then, data can be queried using the following commands:
+Once the package is installed, you can use ```hydroengine``` command to download input data needed for your hydrological model.
+
+Upstream catchments, rivers and various raster variables can be queried using following commands:
 
 ```
 > hydroengine region.json --get-catchments catchments.json
@@ -13,39 +15,28 @@ Once the package is installed, you can use ```hydroengine``` command to download
 > hydroengine region.json --get-raster dem dem.tif 1000 EPSG:4326
 ```
 
-See [examples\
+See [examples/run.sh], showing how different data types can be downloaded.
 
-Usage:
-
-```
->hydroengine.exe [-h]
-                        [--get-catchments PATH]
-                        [--get-rivers PATH] [--filter-upstream-gt VALUE]
-                        [--get-raster VARIABLE PATH CELL_SIZE CRS]
-                        region
-```
-
-All data can be queried for an input area or location (GeoJSON polygon geometry). A polygon may define, for example, a flood location. For example, in the figure below, a single point geometry is used to query upstream catchments and a drainage network, providing runoff water for that location.
+All data types can be queried for an input area or location (GeoJSON polygon geometry). A polygon may define a flood location. For example, in the figure below, a single point near Huston is used to query upstream catchments and a drainage network, providing runoff water for that location.
 
 <img src="https://github.com/Deltares/hydro-engine/blob/master/docs/example_query.png?raw=true" alt="Example" width="626" height="485">
 
-Currently, the following functionality is supported:
+Supported functionality:
 
 * Query upstream catchments as a single or multiple polygons. Source: ![HydroBASINS](http://www.hydrosheds.org/page/hydrobasins)
 * Query upstream drainage network as a line geometry. Source: ![HydroSHEDS](http://hydrosheds.org)
+* Querying raster:
 
-Additionally, the following raster variables can be also requested:
-
-* dem [m] - in meters, source: 30m SRTM v4
-* hand [m] - Height Above the Nearest Drainage (![HAND](http://global-hand.appspot.com))
-* FirstZoneCapacity [-] - ?
-* FirstZoneKsatVer [-] - ?
-* FirstZoneMinCapacity [-] - ?
-* InfiltCapSoil [-] - ?
-* M [-] - ?
-* PathFrac [-] - ?
-* WaterFrac [-] - ?
-* thetaS [-] - ?
-* soil_type [-] - soil type, based on ?
-* landuse [-] - land use type, based on MODIS 500m
-* LAI01...LAI12 - leaf area index monthly climatology, source: ![eartH2Observe](http://www.earth2observe.eu/)
+   dem [m] - in meters, source: 30m SRTM v4
+   hand [m] - Height Above the Nearest Drainage (![HAND](http://global-hand.appspot.com))
+   FirstZoneCapacity [-] - ?
+   FirstZoneKsatVer [-] - ?
+   FirstZoneMinCapacity [-] - ?
+   InfiltCapSoil [-] - ?
+   M [-] - ?
+   PathFrac [-] - ?
+   WaterFrac [-] - ?
+   thetaS [-] - ?
+   soil_type [-] - soil type, based on ?
+   landuse [-] - land use type, based on MODIS 500m
+   LAI01...LAI12 - leaf area index monthly climatology, source: ![eartH2Observe](http://www.earth2observe.eu/)
