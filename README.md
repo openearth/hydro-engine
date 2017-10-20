@@ -2,7 +2,7 @@
 
 All data can be queried for an input area or location (GeoJSON polygon geometry). A polygon may define, for example, a flood location. For example, in the figure below, a single point geometry is used to query upstream catchments and a drainage network, providing runoff water for that location.
 
-![Query results](/docs/example_query.png)
+![Query results](/docs/example_query.png|width=600)
 
 Currently, the following functionality is supported:
 
