@@ -2,20 +2,23 @@
 
 The command-line Python tool can be installed using the following commands:
 ```
-> pip install hydro-engine
+> pip install hydroengine
 ```
 
-Then, data can be queried as:
+Once the package is installed, you can use ```hydroengine``` command to download input data needed for your hydrological model. Then, data can be queried using the following commands:
+
 ```
-> hydro-engine region.json --get-catchments catchments.json
-> hydro-engine region.json --get-rivers rivers.json
-> hydro-engine region.json --get-raster dem dem.tif 1000 EPSG:4326
+> hydroengine region.json --get-catchments catchments.json
+> hydroengine region.json --get-rivers rivers.json
+> hydroengine region.json --get-raster dem dem.tif 1000 EPSG:4326
 ```
+
+See [examples\
 
 Usage:
 
 ```
->hydro-engine.exe [-h]
+>hydroengine.exe [-h]
                         [--get-catchments PATH]
                         [--get-rivers PATH] [--filter-upstream-gt VALUE]
                         [--get-raster VARIABLE PATH CELL_SIZE CRS]
