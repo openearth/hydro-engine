@@ -23,8 +23,8 @@ All data types can be queried for an input area or location (GeoJSON polygon geo
 
 Supported functionality:
 
-* Query upstream catchments as a single or multiple polygons. Source: ![HydroBASINS](http://www.hydrosheds.org/page/hydrobasins)
-* Query upstream drainage network as a line geometry. Source: ![HydroSHEDS](http://hydrosheds.org)
+* Querying upstream catchments as a single or multiple polygons. Source: ![HydroBASINS](http://www.hydrosheds.org/page/hydrobasins)
+* Querying upstream drainage network as polylines. Source: ![HydroSHEDS](http://hydrosheds.org)
 * Querying raster variables:
    * dem [m] - in meters, source: 30m SRTM v4
    * hand [m] - Height Above the Nearest Drainage (![HAND](http://global-hand.appspot.com))
