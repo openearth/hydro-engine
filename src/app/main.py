@@ -10,10 +10,12 @@ from flask import request
 
 import ee
 
-if __name__ == '__main__':
-    import config
-else:
-    from . import config
+import config
+
+# if __name__ == '__main__':
+#    import config
+#else:
+#    from . import config
 
 
 app = Flask(__name__)
@@ -44,8 +46,6 @@ def get_upstream_catchments(basin_source) -> ee.FeatureCollection:
 
 @app.route('/get_catchments', methods=['GET', 'POST'])
 def api_get_catchments():
-    print(request)
-
     bounds = ee.Geometry(request.json['bounds'])
 
     selection = basins.filterBounds(bounds)
@@ -91,7 +91,7 @@ def api_get_rivers():
     # create response
     url = upstream_rivers.getDownloadURL('JSON')
 
-    data = {'catchment_rivers_url': url}
+    data = {'url': url}
     return Response(json.dumps(data), status=200, mimetype='application/json')
 
     # data = upstream_rivers.getInfo()  # TODO: use ZIP to prevent 5000 features limit
@@ -107,10 +107,64 @@ def api_get_rivers():
     #
     # return resp
 
+@app.route('/get_raster', methods=['GET', 'POST'])
+def api_get_raster():
+    variable = request.json['variable']
+    bounds = ee.Geometry(request.json['bounds'])
+    cell_size = float(request.json['cell_size'])
+    crs = request.json['crs']
+
+    selection = basins.filterBounds(bounds)
+
+    # for every selection, get and merge upstream
+    upstream_catchments = ee.FeatureCollection(selection.map(get_upstream_catchments)).flatten().distinct('HYBAS_ID')
+
+    region = upstream_catchments.geometry(cell_size).dissolve(cell_size)
+
+    raster_assets = {
+        'dem': 'USGS/SRTMGL1_003',
+        'FirstZoneCapacity': 'users/gena/HydroEngine/static/FirstZoneCapacity',
+        'FirstZoneKsatVer': 'users/gena/HydroEngine/static/FirstZoneKsatVer',
+        'FirstZoneMinCapacity': 'users/gena/HydroEngine/static/FirstZoneMinCapacity',
+        'InfiltCapSoil': 'users/gena/HydroEngine/static/InfiltCapSoil',
+        'M': 'users/gena/HydroEngine/static/M',
+        'PathFrac': 'users/gena/HydroEngine/static/PathFrac',
+        'WaterFrac': 'users/gena/HydroEngine/static/WaterFrac',
+        'thetaS': 'users/gena/HydroEngine/static/thetaS',
+        'soil_type': 'users/gena/HydroEngine/static/wflow_soil',
+        'landuse': 'users/gena/HydroEngine/static/wflow_landuse',
+        'LAI01': 'users/gena/HydroEngine/static/LAI/LAI00000-001',
+        'LAI02': 'users/gena/HydroEngine/static/LAI/LAI00000-002',
+        'LAI03': 'users/gena/HydroEngine/static/LAI/LAI00000-003',
+        'LAI04': 'users/gena/HydroEngine/static/LAI/LAI00000-004',
+        'LAI05': 'users/gena/HydroEngine/static/LAI/LAI00000-005',
+        'LAI06': 'users/gena/HydroEngine/static/LAI/LAI00000-006',
+        'LAI07': 'users/gena/HydroEngine/static/LAI/LAI00000-007',
+        'LAI08': 'users/gena/HydroEngine/static/LAI/LAI00000-008',
+        'LAI09': 'users/gena/HydroEngine/static/LAI/LAI00000-009',
+        'LAI10': 'users/gena/HydroEngine/static/LAI/LAI00000-010',
+        'LAI11': 'users/gena/HydroEngine/static/LAI/LAI00000-011',
+        'LAI12': 'users/gena/HydroEngine/static/LAI/LAI00000-012'
+    }
+
+    asset = ee.Image(raster_assets[variable]).clip(region)
+
+    # create response
+    url = ee.Image(asset).getDownloadURL({
+        'name': 'variable',
+        'format': 'tif',
+        'crs': crs,
+        'scale': cell_size,
+        'region': json.dumps(region.bounds(cell_size).getInfo())
+    })
+
+    data = {'url': url}
+    return Response(json.dumps(data), status=200, mimetype='application/json')
+
 
 @app.route('/')
 def root():
-    return 'Welcome to Hydro Earth Engine. Currently, only RESTful API is supported. Work in progress ...'
+    return 'Welcome to Hydro Earth Engine. Currently, only RESTful API is supported. Visit <a href="http://github.com/deltares/hydro-engine">http://github.com/deltares/hydro-engine</a> for more information ...'
 
 
 @app.errorhandler(500)

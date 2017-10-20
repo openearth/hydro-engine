@@ -2,6 +2,10 @@ import argparse
 import requests
 import json
 import shutil
+import zipfile
+import tempfile
+import os
+import os.path
 
 # SERVER_URL = 'http://localhost:8080'
 SERVER_URL = 'http://hydro-engine.appspot.com'
@@ -16,8 +20,10 @@ parser.add_argument('--get-rivers', metavar='PATH',
                     help='Download rivers to PATH')
 parser.add_argument('--filter-upstream-gt', metavar='VALUE',
                     help='When downloading rivers, limit number of upstream cells to VALUE')
-parser.add_argument('--get-raster', metavar=('VARIABLE', 'PATH'), nargs=2,
-                    help='Download VARIABLE to PATH as a raster, clipped to the upstream catchment boundaries',
+parser.add_argument('--get-raster', metavar=('VARIABLE', 'PATH', 'CELL_SIZE', 'CRS'), nargs=4,
+                    help='Download VARIABLE to PATH as a raster, clipped to the upstream catchment boundaries'
+                    'Cell size for output rasters is in meters.'
+                    'Coordinate Reference System needs to be given as an EPSG code, for example: EPSG:4326',
                     type=str)
 
 args = parser.parse_args()
@@ -45,17 +51,68 @@ def download_rivers(path):
     r = requests.post(SERVER_URL + '/get_rivers', json=data)
 
     # download from url
-    r = requests.get(json.loads(r.text)['catchment_rivers_url'], stream=True)
+    r = requests.get(json.loads(r.text)['url'], stream=True)
     if r.status_code == 200:
         with open(path, 'wb') as f:
             r.raw.decode_content = True
             shutil.copyfileobj(r.raw, f)
 
 
+def download_raster(path, variable, cell_size, crs):
+    path_name = os.path.splitext(path)[0]
+
+    data = {'type': 'get_raster', 'bounds': region, 'variable': variable, 'cell_size': cell_size, 'crs': crs}
+
+    r = requests.post(SERVER_URL + '/get_raster', json=data)
+
+    # download from url
+    r = requests.get(json.loads(r.text)['url'], stream=True)
+    if r.status_code == 200:
+        # download zip into a temporary file
+        f = tempfile.NamedTemporaryFile(delete=False)
+        r.raw.decode_content = True
+        shutil.copyfileobj(r.raw, f)
+        f.close()
+
+        temp_dir = tempfile.mkdtemp()
+
+        # unzip and rename both tfw and tif
+        zip = zipfile.ZipFile(f.name, 'r')
+        items = zip.namelist()
+        zip.extractall(temp_dir)
+        zip.close()
+
+        # move extracted files to the target path
+        src_tfw = os.path.join(temp_dir, items[0])
+        dst_tfw = path_name + '.tfw'
+        if os.path.exists(dst_tfw):
+            os.remove(dst_tfw)
+        os.rename(src_tfw, dst_tfw)
+
+        src_tif = os.path.join(temp_dir, items[1])
+        if os.path.exists(path):
+            os.remove(path)
+        os.rename(src_tif, path)
+
+        # clean-up
+        os.rmdir(temp_dir)
+        os.remove(f.name)
+
+
 if args.get_catchments:
-    print('Downloading catchments ...')
-    download_catchments(args.get_catchments)
+    path = args.get_catchments
+    print('Downloading catchments to {0} ...'.format(path))
+    download_catchments(path)
 
 if args.get_rivers:
-    print('Downloading rivers ...')
-    download_rivers(args.get_rivers)
+    path = args.get_rivers
+    print('Downloading rivers to {0} ...'.format(path))
+    download_rivers(path)
+
+if args.get_raster:
+    variable = args.get_raster[0]
+    path = args.get_raster[1]
+    cell_size = args.get_raster[2]
+    crs = args.get_raster[3]
+    print('Doanloading raster varaible {0} to {1} ...'.format(variable, path))
+    download_raster(path, variable, cell_size, crs)
