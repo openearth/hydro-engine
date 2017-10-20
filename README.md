@@ -15,7 +15,7 @@ Upstream catchments, rivers and various raster variables can be queried using fo
 > hydroengine region.json --get-raster dem dem.tif 1000 EPSG:4326
 ```
 
-See [examples/run.sh], showing how different data types can be downloaded.
+See [examples/run.sh](https://github.com/Deltares/hydro-engine/blob/master/examples/run.sh), showing how different data types can be downloaded.
 
 All data types can be queried for an input area or location (GeoJSON polygon geometry). A polygon may define a flood location. For example, in the figure below, a single point near Huston is used to query upstream catchments and a drainage network, providing runoff water for that location.
 
