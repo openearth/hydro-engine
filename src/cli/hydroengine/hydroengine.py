@@ -114,7 +114,7 @@ def main():
         path = args.get_raster[1]
         cell_size = args.get_raster[2]
         crs = args.get_raster[3]
-        print('Doanloading raster varaible {0} to {1} ...'.format(variable, path))
+        print('Downloading raster variable {0} to {1} ...'.format(variable, path))
         download_raster(region, path, variable, cell_size, crs)
 
 if __name__ == "__main__":

@@ -17,7 +17,7 @@ Upstream catchments, rivers and various raster variables can be queried using fo
 
 See [examples/run.sh](https://github.com/Deltares/hydro-engine/blob/master/examples/run.sh), showing how different data types can be downloaded.
 
-All data types can be queried for an input area or location (GeoJSON polygon geometry). A polygon may define a flood location. For example, in the figure below, a single point near Huston is used to query upstream catchments and a drainage network, providing runoff water for that location.
+All data types can be queried for an input area or location (GeoJSON polygon geometry). A polygon may define a flood location. For example, in the figure below, a single point near Houston is used to query upstream catchments and a drainage network, providing runoff water for that location.
 
 <img src="https://github.com/Deltares/hydro-engine/blob/master/docs/example_query.png?raw=true" alt="Example" width="626" height="485">
 
