@@ -23,11 +23,11 @@ All data types can be queried for an input area or location (GeoJSON polygon geo
 
 Supported functionality:
 
-* Querying upstream catchments as a single or multiple polygons. Source: ![HydroBASINS](http://www.hydrosheds.org/page/hydrobasins)
-* Querying upstream drainage network as polylines. Source: ![HydroSHEDS](http://hydrosheds.org)
+* Querying upstream catchments as a single or multiple polygons. Source: [HydroBASINS](http://www.hydrosheds.org/page/hydrobasins)
+* Querying upstream drainage network as polylines. Source: [HydroSHEDS](http://hydrosheds.org)
 * Querying raster variables:
    * dem [m] - in meters, source: 30m SRTM v4
-   * hand [m] - Height Above the Nearest Drainage (![HAND](http://global-hand.appspot.com))
+   * hand [m] - Height Above the Nearest Drainage ([HAND](http://global-hand.appspot.com))
    * FirstZoneCapacity [-] - ?
    * FirstZoneKsatVer [-] - ?
    * FirstZoneMinCapacity [-] - ?
@@ -38,5 +38,5 @@ Supported functionality:
    * thetaS [-] - ?
    * soil_type [-] - soil type, based on ?
    * landuse [-] - land use type, based on MODIS 500m
-   * LAI01...LAI12 - leaf area index monthly climatology, source: ![eartH2Observe](http://www.earth2observe.eu/)
+   * LAI01...LAI12 - leaf area index monthly climatology, source: [eartH2Observe](http://www.earth2observe.eu/)
 
