@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import logging
 import json
 import requests
@@ -43,6 +45,8 @@ def get_upstream_catchments(basin_source) -> ee.FeatureCollection:
 
     return upstream_basins
 
+def number_to_string(i):
+    return ee.Number(i).format('%d')
 
 @app.route('/get_catchments', methods=['GET', 'POST'])
 def api_get_catchments():
@@ -75,18 +79,18 @@ def api_get_rivers():
     upstream_catchments = ee.FeatureCollection(selection.map(get_upstream_catchments)).flatten().distinct('HYBAS_ID')
 
     # get ids
-    upstream_catchment_ids = ee.List(upstream_catchments.aggregate_array('HYBAS_ID'))
+    upstream_catchment_ids = ee.List(upstream_catchments.aggregate_array('HYBAS_ID')).map(number_to_string)
 
     # query rivers
     upstream_rivers = rivers \
-        .filter(ee.Filter.inList('hybas_id', upstream_catchment_ids)) \
-        .select(['arcid', 'up_cells', 'hybas_id'])
+        .filter(ee.Filter.inList('HYBAS_ID', upstream_catchment_ids)) \
+        .select(['ARCID', 'UP_CELLS', 'HYBAS_ID'])
 
     # filter upstream branches
     if 'filter_upstream_gt' in request.json:
         filter_upstream = int(request.json['filter_upstream_gt'])
         print('Filtering upstream branches, limiting by {0} number of cells'.format(filter_upstream))
-        upstream_rivers = upstream_rivers.filter(ee.Filter.gte('up_cells', filter_upstream))
+        upstream_rivers = upstream_rivers.filter(ee.Filter.gte('UP_CELLS', filter_upstream))
 
     # create response
     url = upstream_rivers.getDownloadURL('JSON')
