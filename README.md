@@ -12,6 +12,7 @@ Upstream catchments, rivers and various raster variables can be queried using fo
 ```
 > hydroengine region.json --get-catchments catchments.json
 > hydroengine region.json --get-rivers rivers.json
+> hydroengine region.json --get-lakes lakes.json
 > hydroengine region.json --get-raster dem dem.tif 1000 EPSG:4326
 ```
 
