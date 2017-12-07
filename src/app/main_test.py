@@ -1,7 +1,7 @@
 import unittest
 
-from . import main
-# import main
+# from . import main
+import main
 
 
 class TestClient(unittest.TestCase):
@@ -40,6 +40,23 @@ class TestClient(unittest.TestCase):
         }'''
 
         r = self.client.post('/get_rivers', data=request, content_type='application/json')
+        assert r.status_code == 200
+
+    def test_get_lakes(self):
+        request = '''{
+            "bounds":
+                {"type": "Polygon", "coordinates":
+                    [[[5.995833, 4.387513999999975], [7.704733999999998, 4.387513999999975],
+                      [7.704733999999998, 7.925567000000025], [5.995833, 7.925567000000025],
+                      [5.995833, 4.387513999999975]]]},
+            "type": "get_lakes"
+        }'''
+
+        r = self.client.post('/get_lakes', data=request, content_type='application/json')
+      
+        print('LAKES: ')
+        print(r)
+
         assert r.status_code == 200
 
     def test_get_raster(self):

@@ -33,6 +33,9 @@ basins = ee.FeatureCollection('ft:1IHRHUiWkgPXOzwNweeM89CzPYSfokjLlz7_0OTQl')
 # HydroSHEDS rivers, 15s
 rivers = ee.FeatureCollection('users/gena/HydroEngine/riv_15s_lev05')
 
+# HydroLAKES
+lakes = ee.FeatureCollection('users/gena/HydroLAKES_polys_v10')
+
 # graph index
 index = ee.FeatureCollection("users/gena/HydroEngine/hybas_lev05_v1c_index")
 
@@ -93,9 +96,10 @@ def api_get_rivers():
         upstream_rivers = upstream_rivers.filter(ee.Filter.gte('UP_CELLS', filter_upstream))
 
     # create response
-    url = upstream_rivers.getDownloadURL('JSON')
+    url = upstream_rivers.getDownloadURL('json')
 
     data = {'url': url}
+
     return Response(json.dumps(data), status=200, mimetype='application/json')
 
     # data = upstream_rivers.getInfo()  # TODO: use ZIP to prevent 5000 features limit
@@ -110,6 +114,29 @@ def api_get_rivers():
     # resp = Response(json.dumps(data), status=200, mimetype='application/json')
     #
     # return resp
+
+@app.route('/get_lakes', methods=['GET', 'POST'])
+def api_get_lakes():
+    bounds = ee.Geometry(request.json['bounds'])
+
+    selection = basins.filterBounds(bounds)
+
+    # for every selection, get and merge upstream catchments
+    upstream_catchments = ee.FeatureCollection(selection.map(get_upstream_catchments)).flatten().distinct('HYBAS_ID')
+
+    region = upstream_catchments.geometry()
+
+    # query lakes
+    upstream_lakes = ee.FeatureCollection(lakes.filterBounds(region))
+
+    # create response
+    url = upstream_lakes.getDownloadURL('json')
+
+    print(url)
+
+    data = {'url': url}
+
+    return Response(json.dumps(data), status=200, mimetype='application/json')
 
 @app.route('/get_raster', methods=['GET', 'POST'])
 def api_get_raster():

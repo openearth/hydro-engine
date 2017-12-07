@@ -33,6 +33,17 @@ def download_rivers(region, path, filter_upstream_gt):
             r.raw.decode_content = True
             shutil.copyfileobj(r.raw, f)
 
+def download_lakes(region, path):
+    data = {'type': 'get_lakes', 'bounds': region}
+
+    r = requests.post(SERVER_URL + '/get_lakes', json=data)
+
+    # download from url
+    r = requests.get(json.loads(r.text)['url'], stream=True)
+    if r.status_code == 200:
+        with open(path, 'wb') as f:
+            r.raw.decode_content = True
+            shutil.copyfileobj(r.raw, f)
 
 def download_raster(region, path, variable, cell_size, crs):
     path_name = os.path.splitext(path)[0]
@@ -83,6 +94,8 @@ def main():
                         help='Download catchments to PATH')
     parser.add_argument('--get-rivers', metavar='PATH',
                         help='Download rivers to PATH')
+    parser.add_argument('--get-lakes', metavar='PATH',
+                        help='Download lake to PATH')
     parser.add_argument('--filter-upstream-gt', metavar='VALUE',
                         help='When downloading rivers, limit number of upstream cells to VALUE')
     parser.add_argument('--get-raster', metavar=('VARIABLE', 'PATH', 'CELL_SIZE', 'CRS'), nargs=4,
@@ -108,6 +121,11 @@ def main():
         path = args.get_rivers
         print('Downloading rivers to {0} ...'.format(path))
         download_rivers(region, path, filter_upstream_gt)
+
+    if args.get_lakes:
+        path = args.get_lakes
+        print('Downloading lakes to {0} ...'.format(path))
+        download_lakes(region, path)
 
     if args.get_raster:
         variable = args.get_raster[0]

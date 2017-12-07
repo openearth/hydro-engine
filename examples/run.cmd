@@ -2,6 +2,8 @@ hydroengine in/houston.json --get-catchments out/catchments.json
 
 hydroengine in/houston.json --get-rivers out/rivers.json --filter-upstream-gt 1000
 
+hydroengine in/houston.json --get-lakes out/lakes.json
+
 hydroengine in/houston.json --get-raster dem out/dem.tif 10000 EPSG:4326
 hydroengine in/houston.json --get-raster FirstZoneCapacity out/FirstZoneCapacity.tif 10000 EPSG:4326
 hydroengine in/houston.json --get-raster FirstZoneKsatVer out/FirstZoneKsatVer.tif 10000 EPSG:4326
