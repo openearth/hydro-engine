@@ -39,6 +39,7 @@ lakes = ee.FeatureCollection('users/gena/HydroLAKES_polys_v10')
 # graph index
 index = ee.FeatureCollection("users/gena/HydroEngine/hybas_lev05_v1c_index")
 
+monthly_water = ee.ImageCollection("JRC/GSW1_0/MonthlyHistory")
 
 def get_upstream_catchments(basin_source) -> ee.FeatureCollection:
     hybas_id = ee.Number(basin_source.get('HYBAS_ID'))
@@ -118,6 +119,7 @@ def api_get_rivers():
 @app.route('/get_lakes', methods=['GET', 'POST'])
 def api_get_lakes():
     bounds = ee.Geometry(request.json['bounds'])
+    id_only = bool(request.json['id_only'])
 
     selection = basins.filterBounds(bounds)
 
@@ -129,14 +131,76 @@ def api_get_lakes():
     # query lakes
     upstream_lakes = ee.FeatureCollection(lakes.filterBounds(region))
 
+    if id_only:
+      ids = upstream_lakes.aggregate_array('Hylak_id')
+
+      return Response(json.dumps(ids.getInfo()), status=200, mimetype='application/json')
+
     # create response
     url = upstream_lakes.getDownloadURL('json')
-
-    print(url)
 
     data = {'url': url}
 
     return Response(json.dumps(data), status=200, mimetype='application/json')
+
+@app.route('/get_lake_by_id', methods=['GET', 'POST'])
+def get_lake_by_id():
+    lake_id = int(request.json['lake_id'])
+
+    lake = ee.Feature(ee.FeatureCollection(lakes.filter(ee.Filter.eq('Hylak_id', lake_id))).first())
+
+    return Response(json.dumps(lake.getInfo()), status=200, mimetype='application/json')
+
+def get_lake_water_area(lake_id, scale):
+    f = ee.Feature(lakes.filter(ee.Filter.eq('Hylak_id', lake_id)).first())
+
+    def get_monthly_water_area(i):
+        # get water mask
+        water = i.clip(f).eq(2)
+
+        s = scale
+        if not scale:
+            # estimate scale from reservoir surface area, currently 
+            coords = ee.List(f.geometry().bounds().transform('EPSG:3857', 30).coordinates().get(0))
+            ll = ee.List(coords.get(0))
+            ur = ee.List(coords.get(2))
+            width = ee.Number(ll.get(0)).subtract(ur.get(0)).abs()
+            height = ee.Number(ll.get(1)).subtract(ur.get(1)).abs()
+            size = width.max(height)
+
+            MAX_PIXEL_COUNT = 1000
+
+            s = size.divide(MAX_PIXEL_COUNT).max(30)
+
+            print('Automatically estimated scale is: ' + str(s))
+      
+        # compute water area
+        water_area = water.multiply(ee.Image.pixelArea()).reduceRegion(ee.Reducer.sum(), f.geometry(), s).values().get(0)
+        
+        return ee.Feature(None, {'time': i.date().millis(), 'water_area': water_area })
+
+    area = monthly_water.map(get_monthly_water_area)
+
+    area_values = area.aggregate_array('water_area')
+    area_times = area.aggregate_array('time')
+
+    return { 'time': area_times.getInfo(), 'water_area': area_values.getInfo() }
+
+@app.route('/get_lake_time_series', methods=['GET', 'POST'])
+def api_get_lake_time_series():
+    lake_id = int(request.json['lake_id'])
+    variable = str(request.json['variable'])
+
+    scale = None
+    if 'scale' in request.json:
+        scale = int(request.json['scale'])
+
+    if variable == 'water_area':
+        ts = get_lake_water_area(lake_id, scale)
+
+        return Response(json.dumps(ts), status=200, mimetype='application/json')
+
+    return Response('Unknown variable', status=404, mimetype='application/json')
 
 @app.route('/get_raster', methods=['GET', 'POST'])
 def api_get_raster():
