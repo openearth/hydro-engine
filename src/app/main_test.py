@@ -1,3 +1,5 @@
+# TODO: migrate to nose or pytest
+
 import unittest
 
 # from . import main
@@ -13,6 +15,29 @@ class TestClient(unittest.TestCase):
         r = self.client.get('/')
         assert r.status_code == 200
         assert 'Welcome' in r.data.decode('utf-8')
+
+    def test_get_raster_profile(self):
+        line = '''{
+        "polyline": {
+              "geodesic": true,
+              "type": "LineString",
+              "coordinates": [
+                [
+                  5.03448486328125,
+                  53.53541058046374
+                ],
+                [
+                  5.58380126953125,
+                  53.13029407190636
+                ]
+              ]
+            },
+        "scale": 100
+        }'''
+
+        r = self.client.post('/get_raster_profile', data=line, content_type='application/json')
+
+        assert r.status_code == 200
 
     def test_get_catchments(self):
         request = '''{
@@ -53,7 +78,7 @@ class TestClient(unittest.TestCase):
         }'''
 
         r = self.client.post('/get_lakes', data=request, content_type='application/json')
-      
+
         print('LAKES: ')
         print(r)
 

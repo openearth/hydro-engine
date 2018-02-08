@@ -27,3 +27,7 @@ hydroengine in/houston.json --get-raster LAI09 out/LAI09.tif 10000 EPSG:4326
 hydroengine in/houston.json --get-raster LAI10 out/LAI10.tif 10000 EPSG:4326
 hydroengine in/houston.json --get-raster LAI11 out/LAI11.tif 10000 EPSG:4326
 hydroengine in/houston.json --get-raster LAI12 out/LAI12.tif 10000 EPSG:4326
+
+
+hydroengine in/polyline.json --get-raster-profile bathymetry out/profile.json 100
+

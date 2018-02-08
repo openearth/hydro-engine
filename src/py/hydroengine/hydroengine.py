@@ -98,7 +98,7 @@ def download_raster(region, path, variable, cell_size, crs):
 
     data = {'type': 'get_raster', 'bounds': region, 'variable': variable, 'cell_size': cell_size, 'crs': crs}
 
-    r = requests.post(SERVER_URL + '/get_raster', json=data)
+    r = requests.post(SERVER_URL + '/get_raster_profile', json=data)
 
     # download from url
     r = requests.get(json.loads(r.text)['url'], stream=True)
@@ -133,9 +133,22 @@ def download_raster(region, path, variable, cell_size, crs):
         os.rmdir(temp_dir)
         os.remove(f.name)
 
+def download_raster_profile(region, path, variable, scale):
+    data = {'type': 'get_raster_profile', 'polyline': region, 'variable': variable, 'scale': scale}
+
+    r = requests.post(SERVER_URL + '/get_raster_profile', json=data)
+
+    # download from url
+    profile = json.loads(r.text)
+    if r.status_code == 200:
+        with open(path, 'w') as f:
+            json.dump(profile, f)
+
+
 def main():
     parser = argparse.ArgumentParser(description='Download hydrological model input data.')
 
+    # TODO: rename region to geometry. Can be polygon / polyline / point
     parser.add_argument('region', nargs='?',
                         help='Input region GeoJSON file, used to detect upstream catchment boundaries')
     parser.add_argument('--get-catchments', metavar='PATH',
@@ -156,6 +169,12 @@ def main():
                         help='Download VARIABLE to PATH as a raster, clipped to the upstream catchment boundaries'
                         'Cell size for output rasters is in meters.'
                         'Coordinate Reference System needs to be given as an EPSG code, for example: EPSG:4326',
+                        type=str)
+    parser.add_argument('--get-raster-profile', metavar=('VARIABLE', 'PATH', 'SCALE'), nargs=3,
+                        help='Download VARIABLE to PATH as a raster, clipped to the upstream catchment boundaries'
+                        'VARIABLE can be one of: bathymetry | elevation'
+                        'PATH if the name of output file'
+                        'SCALE, defined in meters, is used to split input line into segments used to sample raster image.',
                         type=str)
 
     args = parser.parse_args()
@@ -201,6 +220,13 @@ def main():
         crs = args.get_raster[3]
         print('Downloading raster variable {0} to {1} ...'.format(variable, path))
         download_raster(region, path, variable, cell_size, crs)
+
+    if args.get_raster_profile:
+        variable = args.get_raster_profile[0]
+        path = args.get_raster_profile[1]
+        scale = args.get_raster_profile[2]
+        print('Downloading raster profile for variable {0} to {1} ...'.format(variable, path))
+        download_raster_profile(region, path, variable, scale)
 
 if __name__ == "__main__":
     main()

@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# TODO: move out all non-flask code to a separate file / library
+
 import logging
 import json
 import requests
@@ -41,6 +43,13 @@ index = ee.FeatureCollection("users/gena/HydroEngine/hybas_lev05_v1c_index")
 
 monthly_water = ee.ImageCollection("JRC/GSW1_0/MonthlyHistory")
 
+# bathymetry
+# TODO: merge all bathymetric data sets (GEBCO, EMODnet, Vaklodingen, JetSki, NOAA LiDAR, ...)
+# TODO: add an argument in get_raster_profile(): bathymetric data set as an
+# TODO: add an argument in get_raster_profile(): datetime
+# TODO: add an argument in get_raster_profile(): reducer (max, min, mean, ...)
+bathymetry = ee.ImageCollection('users/gena/vaklodingen').filterDate('2010-01-01', '2019-01-01').mean()
+
 def get_upstream_catchments(basin_source) -> ee.FeatureCollection:
     hybas_id = ee.Number(basin_source.get('HYBAS_ID'))
     upstream_ids = index.filter(ee.Filter.eq('hybas_id', hybas_id)).aggregate_array('parent_from')
@@ -52,6 +61,42 @@ def get_upstream_catchments(basin_source) -> ee.FeatureCollection:
 def number_to_string(i):
     return ee.Number(i).format('%d')
 
+def reduceImageProfile(image, line, reducer, scale):
+    length = line.length()
+    distances = ee.List.sequence(0, length, scale)
+    lines = line.cutLines(distances).geometries();
+
+    def generate_line_segment(l):
+        l = ee.List(l)
+        geom = ee.Geometry(l.get(0))
+        distance = ee.Geometry(l.get(1))
+
+        geom = ee.Algorithms.GeometryConstructors.LineString(geom.coordinates())
+
+        return ee.Feature(geom, {'distance': distance})
+
+    lines = lines.zip(distances).map(generate_line_segment)
+    lines = ee.FeatureCollection(lines)
+
+    # reduce image for every segment
+    band_names = image.bandNames()
+
+    return image.reduceRegions(lines, reducer.setOutputs(band_names), scale)
+
+@app.route('/get_raster_profile', methods=['GET', 'POST'])
+def api_get_raster_profile():
+    polyline = ee.Geometry(request.json['polyline'])
+    scale = float(request.json['scale'])
+
+    reducer = ee.Reducer.mean()
+
+    data = reduceImageProfile(bathymetry, polyline, reducer, scale).getInfo()
+
+    # fill response
+    resp = Response(json.dumps(data), status=200, mimetype='application/json')
+
+    return resp
+
 @app.route('/get_catchments', methods=['GET', 'POST'])
 def api_get_catchments():
     bounds = ee.Geometry(request.json['bounds'])
@@ -62,7 +107,7 @@ def api_get_catchments():
     upstream_catchments = ee.FeatureCollection(selection.map(get_upstream_catchments)).flatten().distinct('HYBAS_ID')
 
     # dissolve output
-    # TODO
+    # TODO: dissolve output
 
     # get GeoJSON
     data = upstream_catchments.getInfo()  # TODO: use ZIP to prevent 5000 feature limit
