@@ -11,7 +11,7 @@ import io
 from flask import Flask
 from flask import Response
 from flask import request
-
+import flask_cors
 import ee
 
 import config
@@ -23,7 +23,6 @@ import config
 
 
 app = Flask(__name__)
-
 # Initialize the EE API.
 # Use our App Engine service account's credentials.
 EE_CREDENTIALS = ee.ServiceAccountCredentials(config.EE_ACCOUNT, config.EE_PRIVATE_KEY_FILE)
@@ -84,7 +83,9 @@ def reduceImageProfile(image, line, reducer, scale):
     return image.reduceRegions(lines, reducer.setOutputs(band_names), scale)
 
 @app.route('/get_raster_profile', methods=['GET', 'POST'])
+@flask_cors.cross_origin()
 def api_get_raster_profile():
+    print('request.json: ', request)
     polyline = ee.Geometry(request.json['polyline'])
     scale = float(request.json['scale'])
 
@@ -205,7 +206,7 @@ def get_lake_water_area(lake_id, scale):
 
         s = scale
         if not scale:
-            # estimate scale from reservoir surface area, currently 
+            # estimate scale from reservoir surface area, currently
             coords = ee.List(f.geometry().bounds().transform('EPSG:3857', 30).coordinates().get(0))
             ll = ee.List(coords.get(0))
             ur = ee.List(coords.get(2))
@@ -218,10 +219,10 @@ def get_lake_water_area(lake_id, scale):
             s = size.divide(MAX_PIXEL_COUNT).max(30)
 
             print('Automatically estimated scale is: ' + str(s))
-      
+
         # compute water area
         water_area = water.multiply(ee.Image.pixelArea()).reduceRegion(ee.Reducer.sum(), f.geometry(), s).values().get(0)
-        
+
         return ee.Feature(None, {'time': i.date().millis(), 'water_area': water_area })
 
     area = monthly_water.map(get_monthly_water_area)
