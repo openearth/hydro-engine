@@ -1,4 +1,5 @@
 Flask==0.12.2
+Flask-Cors==3.0.3
 gunicorn==19.7.1
 earthengine-api==0.1.117
 requests==2.12.4
