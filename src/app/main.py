@@ -85,7 +85,6 @@ def reduceImageProfile(image, line, reducer, scale):
 @app.route('/get_raster_profile', methods=['GET', 'POST'])
 @flask_cors.cross_origin()
 def api_get_raster_profile():
-    print('request.json: ', request)
     polyline = ee.Geometry(request.json['polyline'])
     scale = float(request.json['scale'])
 
