@@ -38,16 +38,14 @@ rivers = ee.FeatureCollection('users/gena/HydroEngine/riv_15s_lev05')
 lakes = ee.FeatureCollection('users/gena/HydroLAKES_polys_v10')
 
 # graph index
-index = ee.FeatureCollection("users/gena/HydroEngine/hybas_lev05_v1c_index")
+index = ee.FeatureCollection('users/gena/HydroEngine/hybas_lev05_v1c_index')
 
-monthly_water = ee.ImageCollection("JRC/GSW1_0/MonthlyHistory")
+monthly_water = ee.ImageCollection('JRC/GSW1_0/MonthlyHistory')
+
 
 # bathymetry
-# TODO: merge all bathymetric data sets (GEBCO, EMODnet, Vaklodingen, JetSki, NOAA LiDAR, ...)
-# TODO: add an argument in get_raster_profile(): bathymetric data set as an
-# TODO: add an argument in get_raster_profile(): datetime
-# TODO: add an argument in get_raster_profile(): reducer (max, min, mean, ...)
-bathymetry = ee.ImageCollection('users/gena/vaklodingen').filterDate('2010-01-01', '2019-01-01').mean()
+bathymetry_vaklodingen = ee.ImageCollection('users/gena/vaklodingen')
+bathymetry_jetski = ee.ImageCollection('users/gena/eo-bathymetry/sandengine_jetski')
 
 def get_upstream_catchments(basin_source) -> ee.FeatureCollection:
     hybas_id = ee.Number(basin_source.get('HYBAS_ID'))
@@ -60,6 +58,9 @@ def get_upstream_catchments(basin_source) -> ee.FeatureCollection:
 def number_to_string(i):
     return ee.Number(i).format('%d')
 
+# TODO: merge all bathymetric data sets (GEBCO, EMODnet, Vaklodingen, JetSki, NOAA LiDAR, ...)
+# TODO: regurn multiple profiles
+# TODO: add an argument in get_raster_profile(): reducer (max, min, mean, ...)
 def reduceImageProfile(image, line, reducer, scale):
     length = line.length()
     distances = ee.List.sequence(0, length, scale)
@@ -85,12 +86,30 @@ def reduceImageProfile(image, line, reducer, scale):
 @app.route('/get_raster_profile', methods=['GET', 'POST'])
 @flask_cors.cross_origin()
 def api_get_raster_profile():
-    polyline = ee.Geometry(request.json['polyline'])
-    scale = float(request.json['scale'])
+
+    r = request.get_json()
+
+    polyline = ee.Geometry(r['polyline'])
+    scale = float(r['scale'])
+    dataset = r['dataset'] # bathymetry_jetski | bathymetry_vaklodingen | dem_srtm | ...
+    begin_date = r['begin_date']
+    end_date = r['end_date']     
+
+    rasters = {
+      'bathymetry_jetski': bathymetry_jetski, 
+      'bathymetry_vaklodingen': bathymetry_vaklodingen
+    }
+                       
+    raster = rasters[dataset]
+
+    if begin_date:
+        raster = raster.filterDate(begin_date, end_date)
 
     reducer = ee.Reducer.mean()
 
-    data = reduceImageProfile(bathymetry, polyline, reducer, scale).getInfo()
+    raster = raster.reduce(reducer)
+
+    data = reduceImageProfile(raster, polyline, reducer, scale).getInfo()
 
     # fill response
     resp = Response(json.dumps(data), status=200, mimetype='application/json')

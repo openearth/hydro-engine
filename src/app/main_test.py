@@ -18,6 +18,9 @@ class TestClient(unittest.TestCase):
 
     def test_get_raster_profile(self):
         line = '''{
+        "dataset": "bathymetry_jetski",
+        "begin_date": "2011-08-02",
+        "end_date": "2011-09-02",
         "polyline": {
               "geodesic": true,
               "type": "LineString",
@@ -36,6 +39,8 @@ class TestClient(unittest.TestCase):
         }'''
 
         r = self.client.post('/get_raster_profile', data=line, content_type='application/json')
+
+        print(r)
 
         assert r.status_code == 200
 
