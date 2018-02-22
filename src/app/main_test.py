@@ -16,6 +16,19 @@ class TestClient(unittest.TestCase):
         assert r.status_code == 200
         assert 'Welcome' in r.data.decode('utf-8')
 
+    def test_get_image_urls(self):
+        input = '''{
+        "dataset": "bathymetry_jetski",
+        "begin_date": "2011-08-01",
+        "end_date": "2011-09-01",
+        "step": 30,
+        "interval": 30,
+        "unit": "day"
+        }'''
+        r = self.client.post('/get_image_urls', data=input, content_type='application/json')
+        print (r)
+        assert r.status_code == 200
+
     def test_get_raster_profile(self):
         line = '''{
         "dataset": "bathymetry_jetski",
@@ -39,9 +52,6 @@ class TestClient(unittest.TestCase):
         }'''
 
         r = self.client.post('/get_raster_profile', data=line, content_type='application/json')
-
-        print(r)
-
         assert r.status_code == 200
 
     def test_get_catchments(self):
