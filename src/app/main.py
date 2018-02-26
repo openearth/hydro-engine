@@ -98,9 +98,8 @@ def api_get_image_urls():
     t_step_units = 'day'
     t_interval_unit = 'day'
 
-    # TODO: let t_count be dependent on begin_date - end_date
     # TODO: Make option for how the interval is chosen (now only forward)
-    t_count = 10
+    t_count = t_end.difference(t_begin, "day").divide(t_interval)
 
     rasters = {
       'bathymetry_jetski': bathymetry_jetski,
