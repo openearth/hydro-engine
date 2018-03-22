@@ -131,23 +131,31 @@ def api_get_image_urls():
 
         images = raster.filterDate(b, e)
 
-        reducer = ee.Reducer.mean()
+        reducer = ee.Reducer.mean().set('begin', b).set('end', e)
 
         return images.reduce(reducer)
 
-    def generate_url(image):
+    def generate_image_info(image):
         image = ee.Image(image)
         m = image.getMapId({'min':colorbar_min[dataset], 'max': colorbar_max[dataset], 'palette': sandengine_pallete})
 
         mapid = m.get('mapid')
         token = m.get('token')
 
-        return { 'mapid': mapid, 'token': token }
+        url = 'https://earthengine.googleapis.com/map/{0}/{{z}}/{{x}}/{{y}}?token={1}'.format(id, token)
+
+        begin = image.get('begin').getInfo()
+
+        end = image.get('end').getInfo()
+
+        return { 'mapid': mapid, 'token': token, 'url': url, 'begin': begin, 'end': end }
 
     images = ee.List.sequence(0, t_count).map(generate_average_image)
 
-    urls = [generate_url(images.get(i)) for i in range(images.size().getInfo())]
-    resp = Response(json.dumps(urls), status=200, mimetype='application/json')
+    infos = [generate_image_info(images.get(i)) for i in range(images.size().getInfo())]
+
+    resp = Response(json.dumps(infos), status=200, mimetype='application/json')
+
     return resp
 
 @app.route('/get_raster_profile', methods=['GET', 'POST'])
@@ -415,5 +423,5 @@ def server_error(e):
 if __name__ == '__main__':
     # This is used when running locally. Gunicorn is used to run the
     # application on Google App Engine. See entrypoint in app.yaml.
-    app.run(host='127.0.0.1', port=8080, debug=True)
+    app.run(host='0.0.0.0', port=8080, debug=True)
 # [END app]
