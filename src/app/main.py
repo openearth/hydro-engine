@@ -131,9 +131,9 @@ def api_get_image_urls():
 
         images = raster.filterDate(b, e)
 
-        reducer = ee.Reducer.mean().set('begin', b).set('end', e)
+        reducer = ee.Reducer.mean()
 
-        return images.reduce(reducer)
+        return images.reduce(reducer).set('begin', b).set('end', e)
 
     def generate_image_info(image):
         image = ee.Image(image)
