@@ -135,6 +135,13 @@ def api_get_image_urls():
 
         return images.reduce(reducer)
 
+    # TODO: don't generate average, but stacked (last image on top)
+    # def generate_stacked_image(i):
+    #     sorted_images = images.sort('system:time_start', False)
+    #     bathymetry = sorted_images.reduce(
+    #         ee.Reducer.firstNonNull()
+    #     )
+
     def generate_url(image):
         image = ee.Image(image)
         m = image.getMapId({'min':colorbar_min[dataset], 'max': colorbar_max[dataset], 'palette': sandengine_pallete})
