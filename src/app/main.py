@@ -261,10 +261,7 @@ def api_get_lakes():
     bounds = ee.Geometry(request.json['bounds'])
     id_only = bool(request.json['id_only'])
 
-    selection = basins.filterBounds(bounds)
-
-    # for every selection, get and merge upstream catchments
-    upstream_catchments = ee.FeatureCollection(selection.map(get_upstream_catchments)).flatten().distinct('HYBAS_ID')
+    upstream_catchments = api_get_catchments(bounds)
 
     region = upstream_catchments.geometry()
 
