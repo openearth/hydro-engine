@@ -261,16 +261,15 @@ def api_get_rivers():
     region_filter = request.json['region_filter']
     catchment_level = request.json['catchment_level']
 
-    if region_filter == 'catchments_upstream':
-        selection = basins[catchment_level].filterBounds(region)
+    # TODO: add support for region-only
 
+    selected_catchments = basins[catchment_level].filterBounds(region)
+
+    if region_filter == 'catchments_upstream':
         # for every selection, get and merge upstream catchments
         selected_catchments = ee.FeatureCollection(
-            selection.map(get_upstream_catchments(catchment_level))) \
+            selected_catchments.map(get_upstream_catchments(catchment_level))) \
             .flatten().distinct('HYBAS_ID')
-
-    if region_filter == 'catchments_intersection':
-        selected_catchments = basins[catchment_level].filterBounds(region)
 
     # get ids
     upstream_catchment_ids = ee.List(
