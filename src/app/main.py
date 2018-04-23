@@ -264,8 +264,7 @@ def api_get_rivers():
     # TODO: add support for region-only
 
     selected_catchments = basins[catchment_level].filterBounds(region)
-
-    if region_filter == 'catchments_upstream':
+    if region_filter == 'catchments-upstream':
         # for every selection, get and merge upstream catchments
         selected_catchments = ee.FeatureCollection(
             selected_catchments.map(get_upstream_catchments(catchment_level))) \
