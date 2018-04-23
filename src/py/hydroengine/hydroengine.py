@@ -121,18 +121,16 @@ def download_raster(region, path, variable, cell_size, crs, region_filter,
     r = requests.get(json.loads(r.text)['url'], stream=True)
     if r.status_code == 200:
         # download zip into a temporary file
-        f = tempfile.NamedTemporaryFile(delete=False)
-        r.raw.decode_content = True
-        shutil.copyfileobj(r.raw, f)
-        f.close()
+        with tempfile.NamedTemporaryFile(delete=False) as f:
+            r.raw.decode_content = True
+            shutil.copyfileobj(r.raw, f)
 
         temp_dir = tempfile.mkdtemp()
 
         # unzip and rename both tfw and tif
-        zip = zipfile.ZipFile(f.name, 'r')
-        items = zip.namelist()
-        zip.extractall(temp_dir)
-        zip.close()
+        with zipfile.ZipFile(f.name, 'r') as zf:
+            items = zf.namelist()
+            zf.extractall(temp_dir)
 
         # move extracted files to the target path
         src_tfw = os.path.join(temp_dir, items[0])
