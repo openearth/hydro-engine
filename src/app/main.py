@@ -290,26 +290,25 @@ def api_get_rivers():
     upstream_catchment_ids = ee.List(
         selected_catchments.aggregate_array('HYBAS_ID'))
 
-    logging.debug("Catchment ids: %s" % repr(upstream_catchment_ids.getInfo()))
+    logging.debug("Number of catchments: %s" %
+                  repr(upstream_catchment_ids.size().getInfo()))
 
     # query rivers
     selected_rivers = rivers \
         .filter(ee.Filter.inList('HYBAS_ID', upstream_catchment_ids)) \
         .select(['ARCID', 'UP_CELLS', 'HYBAS_ID'])
 
-    logging.debug("Number of river branches: %s"
-                  % selected_rivers.aggregate_count('ARCID').getInfo())
-
     # filter upstream branches
     if 'filter_upstream_gt' in request.json:
         filter_upstream = int(request.json['filter_upstream_gt'])
-        print(
+        logging.debug(
             'Filtering upstream branches, limiting by {0} number of cells'.format(
                 filter_upstream))
         selected_rivers = selected_rivers.filter(
             ee.Filter.gte('UP_CELLS', filter_upstream))
 
-    logging.debug(selected_rivers.first().getInfo())
+    logging.debug("Number of river branches: %s"
+                  % selected_rivers.aggregate_count('ARCID').getInfo())
 
     # create response
     url = selected_rivers.getDownloadURL('json')
