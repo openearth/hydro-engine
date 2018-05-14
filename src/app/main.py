@@ -16,13 +16,26 @@ import ee
 
 import config
 
+import error_handler
+
+logFormatter = logging.Formatter(
+    "%(asctime)s [%(threadName)-12.12s] [%(levelname)-7.7s]  %(message)s")
+rootLogger = logging.getLogger()
+rootLogger.setLevel(logging.DEBUG)
+
+consoleHandler = logging.StreamHandler()
+consoleHandler.setFormatter(logFormatter)
+rootLogger.addHandler(consoleHandler)
+
 # if __name__ == '__main__':
 #    import config
 # else:
 #    from . import config
 
-
 app = Flask(__name__)
+
+app.register_blueprint(error_handler.error_handler)
+
 # Initialize the EE API.
 # Use our App Engine service account's credentials.
 EE_CREDENTIALS = ee.ServiceAccountCredentials(config.EE_ACCOUNT,
@@ -39,7 +52,7 @@ basins = {
 }
 
 # HydroSHEDS rivers, 15s
-rivers = ee.FeatureCollection('users/gena/HydroEngine/riv_15s_lev05')
+rivers = ee.FeatureCollection('users/gena/HydroEngine/riv_15s_lev06')
 
 # HydroLAKES
 lakes = ee.FeatureCollection('users/gena/HydroLAKES_polys_v10')
@@ -58,7 +71,8 @@ bathymetry_lidar = ee.ImageCollection('users/gena/eo-bathymetry/rws_lidar')
 
 def get_upstream_catchments(level):
     if level != 6:
-        raise Exception('Currently, only level 6 is supported for upstream catchments')
+        raise Exception(
+            'Currently, only level 6 is supported for upstream catchments')
 
     def _get_upstream_catchments(basin_source) -> ee.FeatureCollection:
         hybas_id = ee.Number(basin_source.get('HYBAS_ID'))
@@ -263,21 +277,28 @@ def api_get_rivers():
 
     # TODO: add support for region-only
 
+    logging.debug("Region filter: %s" % region_filter)
+
     selected_catchments = basins[catchment_level].filterBounds(region)
     if region_filter == 'catchments-upstream':
         # for every selection, get and merge upstream catchments
         selected_catchments = ee.FeatureCollection(
-            selected_catchments.map(get_upstream_catchments(catchment_level))) \
+            selected_catchments.map(get_upstream_catchments(catchment_level)))\
             .flatten().distinct('HYBAS_ID')
 
     # get ids
     upstream_catchment_ids = ee.List(
-        selected_catchments.aggregate_array('HYBAS_ID')).map(number_to_string)
+        selected_catchments.aggregate_array('HYBAS_ID'))
+
+    logging.debug("Catchment ids: %s" % repr(upstream_catchment_ids.getInfo()))
 
     # query rivers
     selected_rivers = rivers \
         .filter(ee.Filter.inList('HYBAS_ID', upstream_catchment_ids)) \
         .select(['ARCID', 'UP_CELLS', 'HYBAS_ID'])
+
+    logging.debug("Number of river branches: %s"
+                  % selected_rivers.aggregate_count('ARCID').getInfo())
 
     # filter upstream branches
     if 'filter_upstream_gt' in request.json:
@@ -287,6 +308,8 @@ def api_get_rivers():
                 filter_upstream))
         selected_rivers = selected_rivers.filter(
             ee.Filter.gte('UP_CELLS', filter_upstream))
+
+    logging.debug(selected_rivers.first().getInfo())
 
     # create response
     url = selected_rivers.getDownloadURL('json')
@@ -426,7 +449,6 @@ def api_get_raster():
         region = basins[catchment_level].filterBounds(region)
 
         region = region.geometry().bounds()
-
 
     raster_assets = {
         'dem': 'USGS/SRTMGL1_003',
