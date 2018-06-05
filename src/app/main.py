@@ -232,6 +232,60 @@ def api_get_raster_profile():
     return resp
 
 
+@app.route('/get_water_mask', methods=['POST'])
+def api_get_water_mask():
+    """
+    Code Editor URL:
+    https://code.earthengine.google.com/4dd0b18aa43bfabf4845753dc7c6ba5c
+    """
+
+    use_url = request.json['use_url']
+    region = ee.Geometry(request.json['region'])
+    bands = ['B3', 'B8']  # green, nir
+    start = '2017-01-01'
+    stop = '2018-01-01'
+    percentile = 10
+    ndwi_threshold = 0
+    scale_vector = 10
+
+    # filter Sentinel-2 images
+    images = ee.ImageCollection('COPERNICUS/S2') \
+        .select(bands) \
+        .filterBounds(region) \
+        .filterDate(start, stop) \
+        .map(lambda i: i.resample('bilinear'))
+
+    # remove noise (clouds, shadows) using percentile composite
+    image = images \
+        .reduce(ee.Reducer.percentile([percentile])) \
+
+    # computer water mask using NDWI
+    water_mask = image \
+        .normalizedDifference() \
+        .gt(ndwi_threshold)
+
+    # vectorize
+    water_mask_vector = water_mask \
+        .mask(water_mask) \
+        .reduceToVectors(**{
+            "geometry": region,
+            "scale": scale_vector / 2
+        })
+
+    water_mask_vector = water_mask_vector.toList(10000)\
+        .map(lambda f: ee.Feature(f).simplify(scale_vector))
+
+    water_mask_vector = ee.FeatureCollection(water_mask_vector)
+
+    # create response
+    if use_url:
+        url = water_mask_vector.getDownloadURL('json')
+        data = {'url': url}
+    else:
+        data = water_mask_vector.getInfo()
+
+    return Response(json.dumps(data), status=200, mimetype='application/json')
+
 @app.route('/get_catchments', methods=['GET', 'POST'])
 def api_get_catchments():
     region = ee.Geometry(request.json['region'])
@@ -300,12 +354,12 @@ def api_get_rivers():
 
     # filter upstream branches
     if 'filter_upstream_gt' in request.json:
-        filter_upstream = int(request.json['filter_upstream_gt'])
-        logging.debug(
-            'Filtering upstream branches, limiting by {0} number of cells'.format(
-                filter_upstream))
-        selected_rivers = selected_rivers.filter(
-            ee.Filter.gte('UP_CELLS', filter_upstream))
+       filter_upstream = int(request.json['filter_upstream_gt'])
+       logging.debug(
+           'Filtering upstream branches, limiting by {0} number of cells'.format(
+               filter_upstream))
+       selected_rivers = selected_rivers.filter(
+           ee.Filter.gte('UP_CELLS', filter_upstream))
 
     logging.debug("Number of river branches: %s"
                   % selected_rivers.aggregate_count('ARCID').getInfo())
@@ -494,8 +548,7 @@ def api_get_raster():
 
     data = {'url': url}
     return Response(json.dumps(data), status=200, mimetype='application/json')
-
-
+                   
 @app.route('/')
 def root():
     return 'Welcome to Hydro Earth Engine. Currently, only RESTful API is supported. Visit <a href="http://github.com/deltares/hydro-engine">http://github.com/deltares/hydro-engine</a> for more information ...'
