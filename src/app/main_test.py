@@ -1,10 +1,12 @@
 # TODO: migrate to nose or pytest
-
+import json
 import unittest
+import logging
 
 # from . import main
 import main
 
+logger = logging.getLogger(__name__)
 
 class TestClient(unittest.TestCase):
     def setUp(self):
@@ -17,16 +19,26 @@ class TestClient(unittest.TestCase):
         assert 'Welcome' in r.data.decode('utf-8')
 
     def test_get_image_urls(self):
-        input = '''{
-        "dataset": "bathymetry_jetski",
-        "begin_date": "2011-08-01",
-        "end_date": "2011-09-01",
-        "step": 30,
-        "interval": 30,
-        "unit": "day"
-        }'''
-        r = self.client.post('/get_image_urls', data=input, content_type='application/json')
-        print (r)
+        input = {
+            "dataset": "bathymetry_jetski",
+            "begin_date": "2011-08-01",
+            "end_date": "2011-09-01",
+            "step": 30,
+            "interval": 30,
+            "unit": "day"
+        }
+        r = self.client.post('/get_image_urls', data=json.dumps(input), content_type='application/json')
+        logger.debug(r)
+        assert r.status_code == 200
+
+    def test_get_bathymetry(self):
+        input = {
+            "dataset": "vaklodingen",
+            "begin_date": "2011-08-01",
+            "end_date": "2011-09-01"
+        }
+        r = self.client.get('/get_bathymetry', data=json.dumps(input), content_type='application/json')
+        logger.debug(r)
         assert r.status_code == 200
 
     def test_get_raster_profile(self):

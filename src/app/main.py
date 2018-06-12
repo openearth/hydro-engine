@@ -170,7 +170,7 @@ def api_get_image_urls():
         token = m.get('token')
 
         url = 'https://earthengine.googleapis.com/map/{0}/{{z}}/{{x}}/{{y}}?token={1}'.format(
-            id, token)
+            mapid, token)
 
         begin = image.get('begin').getInfo()
 
@@ -245,10 +245,10 @@ def api_get_bathymetry():
         mapid = m.get('mapid')
         token = m.get('token')
 
-        url = 'https://earthengine.googleapis.com/map/{id}/{{z}}/{{x}}/{{y}}?token={token}'.format({
-            "id": id,
-            "token": token
-        })
+        url = 'https://earthengine.googleapis.com/map/{mapid}/{{z}}/{{x}}/{{y}}?token={token}'.format(
+            mapid=mapid,
+            token=token
+        )
         result = {
             'mapid': mapid,
             'token': token,
