@@ -3,6 +3,7 @@
 # TODO: move out all non-flask code to a separate file / library
 
 import logging
+import warnings
 import json
 import requests
 import zipfile
@@ -110,6 +111,7 @@ def reduceImageProfile(image, line, reducer, scale):
 @app.route('/get_image_urls', methods=['GET', 'POST'])
 @flask_cors.cross_origin()
 def api_get_image_urls():
+    warnings.warn('get_image_urls is no longer supported, please update to get_bathymetry')
     r = request.get_json()
     dataset = r[
         'dataset']  # bathymetry_jetski | bathymetry_vaklodingen | dem_srtm | ...
