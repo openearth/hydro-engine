@@ -3,8 +3,7 @@ import json
 import unittest
 import logging
 
-# from . import main
-import main
+from . import main
 
 logger = logging.getLogger(__name__)
 
@@ -68,13 +67,14 @@ class TestClient(unittest.TestCase):
 
     def test_get_catchments(self):
         request = '''{
-            "bounds":
+            "region":
                 {"type": "Polygon", "coordinates":
                     [[[5.995833, 4.387513999999975], [7.704733999999998, 4.387513999999975],
                       [7.704733999999998, 7.925567000000025], [5.995833, 7.925567000000025],
                       [5.995833, 4.387513999999975]]]},
-            "type": "get_catchments",
-            "dissolve": true
+            "dissolve": true,
+            "catchment_level": 6,
+            "region_filter": ""
         }'''
 
         r = self.client.post('/get_catchments', data=request, content_type='application/json')
@@ -82,13 +82,14 @@ class TestClient(unittest.TestCase):
 
     def test_get_rivers(self):
         request = '''{
-            "bounds":
+            "region":
                 {"type": "Polygon", "coordinates":
                     [[[5.995833, 4.387513999999975], [7.704733999999998, 4.387513999999975],
                       [7.704733999999998, 7.925567000000025], [5.995833, 7.925567000000025],
                       [5.995833, 4.387513999999975]]]},
-            "type": "get_rivers",
-            "filter_upstream_gt": 1000
+            "filter_upstream_gt": 1000,
+            "catchment_level": 6,
+            "region_filter": ""
         }'''
 
         r = self.client.post('/get_rivers', data=request, content_type='application/json')
@@ -96,18 +97,17 @@ class TestClient(unittest.TestCase):
 
     def test_get_lakes(self):
         request = '''{
-            "bounds":
+            "region":
                 {"type": "Polygon", "coordinates":
                     [[[5.995833, 4.387513999999975], [7.704733999999998, 4.387513999999975],
                       [7.704733999999998, 7.925567000000025], [5.995833, 7.925567000000025],
                       [5.995833, 4.387513999999975]]]},
-            "type": "get_lakes"
+            "id_only": false
         }'''
 
         r = self.client.post('/get_lakes', data=request, content_type='application/json')
 
         print('LAKES: ')
-        print(r)
 
         assert r.status_code == 200
 

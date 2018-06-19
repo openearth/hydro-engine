@@ -2,6 +2,8 @@
 
 # TODO: move out all non-flask code to a separate file / library
 
+import sys
+import os
 import logging
 import json
 import flask_cors
@@ -11,11 +13,40 @@ from flask import Response
 from flask import request
 import ee
 
+sys.path.append(os.getcwd())
+
 import config
+
+import error_handler
 
 logger = logging.getLogger(__name__)
 
+logger.setLevel(logging.DEBUG)
+
+logFormatter = logging.Formatter(
+    "%(asctime)s [%(threadName)-12.12s] [%(levelname)-7.7s]  %(message)s")
+
+consoleHandler = logging.StreamHandler()
+consoleHandler.setFormatter(logFormatter)
+
+logger.addHandler(consoleHandler)
+
+# if __name__ == '__main__':
+#    import config
+# else:
+#    from . import config
+
 app = Flask(__name__)
+
+app.register_blueprint(error_handler.error_handler)
+
+# if 'privatekey.json' is defined in environmental variable - write it to file
+if 'key' in os.environ:
+  print('Writing privatekey.json from environmental variable ...')
+  content = base64.b64decode(os.environ['key']).decode('ascii')
+
+  with open(EE_PRIVATE_KEY_FILE, 'w') as f:
+    f.write(content)
 
 # Initialize the EE API.
 # Use our App Engine service account's credentials.
@@ -33,7 +64,7 @@ basins = {
 }
 
 # HydroSHEDS rivers, 15s
-rivers = ee.FeatureCollection('users/gena/HydroEngine/riv_15s_lev05')
+rivers = ee.FeatureCollection('users/gena/HydroEngine/riv_15s_lev06')
 
 # HydroLAKES
 lakes = ee.FeatureCollection('users/gena/HydroLAKES_polys_v10')
@@ -53,7 +84,8 @@ monthly_water = ee.ImageCollection('JRC/GSW1_0/MonthlyHistory')
 
 def get_upstream_catchments(level):
     if level != 6:
-        raise Exception('Currently, only level 6 is supported for upstream catchments')
+        raise Exception(
+            'Currently, only level 6 is supported for upstream catchments')
 
     def _get_upstream_catchments(basin_source) -> ee.FeatureCollection:
         hybas_id = ee.Number(basin_source.get('HYBAS_ID'))
@@ -297,6 +329,60 @@ def api_get_raster_profile():
     return resp
 
 
+@app.route('/get_water_mask', methods=['POST'])
+def api_get_water_mask():
+    """
+    Code Editor URL:
+    https://code.earthengine.google.com/4dd0b18aa43bfabf4845753dc7c6ba5c
+    """
+
+    use_url = request.json['use_url']
+    region = ee.Geometry(request.json['region'])
+    bands = ['B3', 'B8']  # green, nir
+    start = '2017-01-01'
+    stop = '2018-01-01'
+    percentile = 10
+    ndwi_threshold = 0
+    scale_vector = 10
+
+    # filter Sentinel-2 images
+    images = ee.ImageCollection('COPERNICUS/S2') \
+        .select(bands) \
+        .filterBounds(region) \
+        .filterDate(start, stop) \
+        .map(lambda i: i.resample('bilinear'))
+
+    # remove noise (clouds, shadows) using percentile composite
+    image = images \
+        .reduce(ee.Reducer.percentile([percentile])) \
+
+    # computer water mask using NDWI
+    water_mask = image \
+        .normalizedDifference() \
+        .gt(ndwi_threshold)
+
+    # vectorize
+    water_mask_vector = water_mask \
+        .mask(water_mask) \
+        .reduceToVectors(**{
+            "geometry": region,
+            "scale": scale_vector / 2
+        })
+
+    water_mask_vector = water_mask_vector.toList(10000)\
+        .map(lambda f: ee.Feature(f).simplify(scale_vector))
+
+    water_mask_vector = ee.FeatureCollection(water_mask_vector)
+
+    # create response
+    if use_url:
+        url = water_mask_vector.getDownloadURL('json')
+        data = {'url': url}
+    else:
+        data = water_mask_vector.getInfo()
+
+    return Response(json.dumps(data), status=200, mimetype='application/json')
+
 @app.route('/get_catchments', methods=['GET', 'POST'])
 def api_get_catchments():
     region = ee.Geometry(request.json['region'])
@@ -342,16 +428,21 @@ def api_get_rivers():
 
     # TODO: add support for region-only
 
+    logger.debug("Region filter: %s" % region_filter)
+
     selected_catchments = basins[catchment_level].filterBounds(region)
     if region_filter == 'catchments-upstream':
         # for every selection, get and merge upstream catchments
         selected_catchments = ee.FeatureCollection(
-            selected_catchments.map(get_upstream_catchments(catchment_level))) \
+            selected_catchments.map(get_upstream_catchments(catchment_level)))\
             .flatten().distinct('HYBAS_ID')
 
     # get ids
     upstream_catchment_ids = ee.List(
-        selected_catchments.aggregate_array('HYBAS_ID')).map(number_to_string)
+        selected_catchments.aggregate_array('HYBAS_ID'))
+
+    logger.debug("Number of catchments: %s" %
+                  repr(upstream_catchment_ids.size().getInfo()))
 
     # query rivers
     selected_rivers = rivers \
@@ -360,12 +451,15 @@ def api_get_rivers():
 
     # filter upstream branches
     if 'filter_upstream_gt' in request.json:
-        filter_upstream = int(request.json['filter_upstream_gt'])
-        print(
-            'Filtering upstream branches, limiting by {0} number of cells'.format(
-                filter_upstream))
-        selected_rivers = selected_rivers.filter(
-            ee.Filter.gte('UP_CELLS', filter_upstream))
+       filter_upstream = int(request.json['filter_upstream_gt'])
+       logger.debug(
+           'Filtering upstream branches, limiting by {0} number of cells'.format(
+               filter_upstream))
+       selected_rivers = selected_rivers.filter(
+           ee.Filter.gte('UP_CELLS', filter_upstream))
+
+    logger.debug("Number of river branches: %s"
+                  % selected_rivers.aggregate_count('ARCID').getInfo())
 
     # create response
     url = selected_rivers.getDownloadURL('json')
@@ -506,7 +600,6 @@ def api_get_raster():
 
         region = region.geometry().bounds()
 
-
     raster_assets = {
         'dem': 'USGS/SRTMGL1_003',
         'hand': 'users/gena/global-hand/hand-100',
@@ -552,8 +645,7 @@ def api_get_raster():
 
     data = {'url': url}
     return Response(json.dumps(data), status=200, mimetype='application/json')
-
-
+                   
 @app.route('/')
 def root():
     return 'Welcome to Hydro Earth Engine. Currently, only RESTful API is supported. Visit <a href="http://github.com/deltares/hydro-engine">http://github.com/deltares/hydro-engine</a> for more information ...'

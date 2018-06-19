@@ -11,6 +11,23 @@ import os.path
 SERVER_URL = 'http://hydro-engine.appspot.com'
 
 
+def download_water_mask(region, path):
+    data = {'type': 'get_water_mask', 'region': region, 'use_url': True}
+    r = requests.post(SERVER_URL + '/get_water_mask', json=data)
+
+    # download from url
+    r = requests.get(json.loads(r.text)['url'], stream=True)
+    if r.status_code == 200:
+        with open(path, 'wb') as f:
+            r.raw.decode_content = True
+            shutil.copyfileobj(r.raw, f)
+
+def get_water_mask(region):
+    data = {'type': 'get_water_mask', 'region': region, 'use_url': False}
+    r = requests.post(SERVER_URL + '/get_water_mask', json=data)
+
+    return r.text
+
 def download_catchments(region, path, region_filter, catchment_level):
     data = {'type': 'get_catchments', 'region': region, 'dissolve': True,
             'region_filter': region_filter, 'catchment_level': catchment_level}
@@ -35,7 +52,6 @@ def download_rivers(region, path, filter_upstream_gt, region_filter, catchment_l
         with open(path, 'wb') as f:
             r.raw.decode_content = True
             shutil.copyfileobj(r.raw, f)
-
 
 def get_lake_time_series(lake_id, variable, scale=0):
     data = {'type': 'get_lake_time_series', 'lake_id': lake_id,
@@ -169,31 +185,23 @@ def main():
     # TODO: rename region to geometry. Can be polygon / polyline / point
     parser.add_argument('region', nargs='?',
                         help='Input region GeoJSON file, used to detect upstream catchment boundaries')
+
+    parser.add_argument('--get-water-mask', metavar='PATH',
+                        help='Get water mask to PATH as GeoJSON')
+
     parser.add_argument('--get-catchments', metavar='PATH',
                         help='Download catchments to PATH')
-    parser.add_argument('--catchment-level', metavar='VALUE', default=6,
-                        help='Detail level for catchment selection (5-9). Upstream catchments can be queried only for levels 5-6')
-    parser.add_argument('--region-filter', metavar='VALUE',
-                        choices=[
-                            'region',
-                            'catchments-upstream',
-                            'catchments-intersection'
-                        ],
-                        default='catchments-upstream',  # backward-compatibility
-                        help='Defines strategy to use when selecting features or clipping rasters')
+
     parser.add_argument('--get-rivers', metavar='PATH',
                         help='Download rivers to PATH')
+
     parser.add_argument('--get-lakes', metavar='PATH',
                         help='Download lake to PATH')
-    parser.add_argument('--id-only', action='store_true',
-                        help='Return only feature ids')
-    parser.add_argument('--scale', metavar='VALUE',
-                        help='When downloading lake time series or performing other geospatial operations - scale can be optionally specified')
+
     parser.add_argument('--get-lake-variable',
                         metavar=('LAKE-ID', 'VARIABLE', 'PATH'), nargs=3,
                         help='Download lake variable to PATH in JSON format, VARIABLE is currently only \'water_area\', LAKE-ID can be obtained using --id-only or from a full lake information')
-    parser.add_argument('--filter-upstream-gt', metavar='VALUE',
-                        help='When downloading rivers, limit number of upstream cells to VALUE')
+
     parser.add_argument('--get-raster',
                         metavar=('VARIABLE', 'PATH', 'CELL_SIZE', 'CRS'),
                         nargs=4,
@@ -201,6 +209,7 @@ def main():
                              'Cell size for output rasters is in meters.'
                              'Coordinate Reference System needs to be given as an EPSG code, for example: EPSG:4326',
                         type=str)
+
     parser.add_argument('--get-raster-profile',
                         metavar=('VARIABLE', 'PATH', 'SCALE'), nargs=3,
                         help='Download VARIABLE to PATH as a raster, clipped to the upstream catchment boundaries'
@@ -208,6 +217,29 @@ def main():
                              'PATH if the name of output file'
                              'SCALE, defined in meters, is used to split input line into segments used to sample raster image.',
                         type=str)
+    # optional arguments
+    parser.add_argument('--catchment-level', metavar='VALUE', default=6,
+                        help='Detail level for catchment selection (5-9). Upstream catchments can be queried only for levels 5-6')
+
+    parser.add_argument('--region-filter', metavar='VALUE',
+                        choices=[
+                            'region',
+                            'catchments-upstream',
+                            'catchments-intersection'
+                        ],
+                        default='catchments-upstream',  # backward-compatibility
+                        help='Defines strategy to use when selecting features or clipping rasters (region | catchments-upstream | catchments-intersection)')
+
+    parser.add_argument('--id-only', action='store_true',
+                        help='Return only feature ids')
+
+    parser.add_argument('--scale', metavar='VALUE',
+                        help='When downloading lake time series or performing other geospatial operations - scale can be optionally specified')
+
+    parser.add_argument('--filter-upstream-gt', metavar='VALUE',
+                        help='When downloading rivers, limit number of upstream cells to VALUE')
+
+
 
     args = parser.parse_args()
 
@@ -224,6 +256,11 @@ def main():
     if region_path:
         with open(region_path) as region_file:
             region = json.load(region_file)
+
+    if args.get_water_mask:
+        path = args.get_water_mask
+        print('Downloading water mask to {0} ...'.format(path))
+        download_water_mask(region, path)
 
     if args.get_catchments:
         path = args.get_catchments

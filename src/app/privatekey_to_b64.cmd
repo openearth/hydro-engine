@@ -1,0 +1,1 @@
+base64.exe --wrap=0 privatekey.json >privatekey.b64

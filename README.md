@@ -1,5 +1,7 @@
 **Hydro Engine** is a small service and a command-line tool built on top of [Google Earth Engine](http://earthengine.google.com) that allows querying various hydrological variables, useful as an input for hydrological models.
 
+[![Build Status](https://travis-ci.org/openearth/hydro-engine.svg?branch=master)](https://travis-ci.org/openearth/hydro-engine)
+
 The command-line Python tool can be installed using the following commands:
 ```
 > pip install hydroengine

@@ -1,0 +1,1 @@
+hydroengine region.json --get-water-mask water_mask.json

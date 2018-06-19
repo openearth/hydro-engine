@@ -1,1 +1,1 @@
-pyinstaller --onefile ../cli/hydroengine/hydroengine.py
+pyinstaller --onefile ../py/hydroengine/hydroengine.py
