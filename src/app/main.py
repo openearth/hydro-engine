@@ -3,11 +3,7 @@
 # TODO: move out all non-flask code to a separate file / library
 
 import logging
-import warnings
 import json
-import requests
-import zipfile
-import io
 import flask_cors
 
 from flask import Flask
@@ -17,13 +13,10 @@ import ee
 
 import config
 
-# if __name__ == '__main__':
-#    import config
-# else:
-#    from . import config
-
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+
 # Initialize the EE API.
 # Use our App Engine service account's credentials.
 EE_CREDENTIALS = ee.ServiceAccountCredentials(config.EE_ACCOUNT,
@@ -45,8 +38,7 @@ rivers = ee.FeatureCollection('users/gena/HydroEngine/riv_15s_lev05')
 # HydroLAKES
 lakes = ee.FeatureCollection('users/gena/HydroLAKES_polys_v10')
 
-
-# available datasets
+# available datasets for bathymetry
 bathymetry = {
     'jetski': ee.ImageCollection('users/gena/eo-bathymetry/sandengine_jetski'),
     'vaklodingen': ee.ImageCollection('users/gena/vaklodingen'),
@@ -57,8 +49,6 @@ bathymetry = {
 index = ee.FeatureCollection('users/gena/HydroEngine/hybas_lev06_v1c_index')
 
 monthly_water = ee.ImageCollection('JRC/GSW1_0/MonthlyHistory')
-
-# bathymetry
 
 
 def get_upstream_catchments(level):
@@ -111,7 +101,7 @@ def reduceImageProfile(image, line, reducer, scale):
 @app.route('/get_image_urls', methods=['GET', 'POST'])
 @flask_cors.cross_origin()
 def api_get_image_urls():
-    warnings.warn('get_image_urls is no longer supported, please update to get_bathymetry')
+    logger.warn('get_image_urls is no longer supported, please update to get_bathymetry')
     r = request.get_json()
     dataset = r[
         'dataset']  # bathymetry_jetski | bathymetry_vaklodingen | dem_srtm | ...
@@ -571,7 +561,7 @@ def root():
 
 @app.errorhandler(500)
 def server_error(e):
-    logging.exception('An error occurred during a request.')
+    logger.exception('An error occurred during a request.')
     return """
     An internal error occurred: <pre>{}</pre>
     See logs for full stacktrace.
