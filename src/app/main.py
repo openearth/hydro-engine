@@ -6,11 +6,14 @@ import sys
 import os
 import logging
 import json
-import flask_cors
+import base64
 
 from flask import Flask
 from flask import Response
 from flask import request
+
+import flask_cors
+
 import ee
 
 sys.path.append(os.getcwd())
