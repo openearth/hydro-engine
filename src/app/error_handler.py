@@ -8,7 +8,7 @@ error_handler = Blueprint('errors', __name__)
 
 @error_handler.app_errorhandler(Exception)
 def handle_unexpected_error(error):
-    print(traceback.print_exc())
+    stack = traceback.format_exc()
 
     status_code = 500
     success = False
@@ -16,7 +16,8 @@ def handle_unexpected_error(error):
         'success': success,
         'error': {
             'type': 'UnexpectedException',
-            'message': str(error)
+            'message': str(error),
+            'stack': stack
         }
     }
 
