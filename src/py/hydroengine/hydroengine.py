@@ -7,8 +7,8 @@ import tempfile
 import os
 import os.path
 
-SERVER_URL = 'http://localhost:8080'
-# SERVER_URL = 'http://hydro-engine.appspot.com'
+# SERVER_URL = 'http://localhost:8080'
+SERVER_URL = 'http://hydro-engine.appspot.com'
 
 
 def download_water_mask(region, path):
