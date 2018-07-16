@@ -7,8 +7,8 @@ import tempfile
 import os
 import os.path
 
-# SERVER_URL = 'http://localhost:8080'
-SERVER_URL = 'http://hydro-engine.appspot.com'
+SERVER_URL = 'http://localhost:8080'
+# SERVER_URL = 'http://hydro-engine.appspot.com'
 
 
 def download_water_mask(region, path):
@@ -17,13 +17,18 @@ def download_water_mask(region, path):
 
     # download from url
     r = requests.get(json.loads(r.text)['url'], stream=True)
+
     if r.status_code == 200:
         with open(path, 'wb') as f:
             r.raw.decode_content = True
             shutil.copyfileobj(r.raw, f)
 
-def get_water_mask(region):
-    data = {'type': 'get_water_mask', 'region': region, 'use_url': False}
+def get_water_mask(region, start, stop, percentile=10, ndwi_threshold=0, scale=10):
+    data = {'type': 'get_water_mask', 'region': region, 
+           'start': start, 'stop': stop, 'percentile': percentile, 
+           'ndwi_threshold': ndwi_threshold, 'scale': scale,
+           'use_url': False}
+
     r = requests.post(SERVER_URL + '/get_water_mask', json=data)
 
     return r.text
@@ -31,6 +36,7 @@ def get_water_mask(region):
 def download_catchments(region, path, region_filter, catchment_level):
     data = {'type': 'get_catchments', 'region': region, 'dissolve': True,
             'region_filter': region_filter, 'catchment_level': catchment_level}
+
     r = requests.post(SERVER_URL + '/get_catchments', json=data)
 
     with open(path, 'w') as file:

@@ -7,6 +7,7 @@ from . import main
 
 logger = logging.getLogger(__name__)
 
+
 class TestClient(unittest.TestCase):
     def setUp(self):
         main.app.testing = True
@@ -26,7 +27,8 @@ class TestClient(unittest.TestCase):
             "interval": 30,
             "unit": "day"
         }
-        r = self.client.post('/get_image_urls', data=json.dumps(input), content_type='application/json')
+        r = self.client.post('/get_image_urls', data=json.dumps(input),
+                             content_type='application/json')
         logger.debug(r)
         assert r.status_code == 200
 
@@ -36,7 +38,8 @@ class TestClient(unittest.TestCase):
             "begin_date": "2011-08-01",
             "end_date": "2011-09-01"
         }
-        r = self.client.get('/get_bathymetry', data=json.dumps(input), content_type='application/json')
+        r = self.client.get('/get_bathymetry', data=json.dumps(input),
+                            content_type='application/json')
         logger.debug(r)
         assert r.status_code == 200
 
@@ -62,7 +65,8 @@ class TestClient(unittest.TestCase):
         "scale": 100
         }'''
 
-        r = self.client.post('/get_raster_profile', data=line, content_type='application/json')
+        r = self.client.post('/get_raster_profile', data=line,
+                             content_type='application/json')
         assert r.status_code == 200
 
     def test_get_catchments(self):
@@ -77,7 +81,8 @@ class TestClient(unittest.TestCase):
             "region_filter": ""
         }'''
 
-        r = self.client.post('/get_catchments', data=request, content_type='application/json')
+        r = self.client.post('/get_catchments', data=request,
+                             content_type='application/json')
         assert r.status_code == 200
 
     def test_get_rivers(self):
@@ -92,7 +97,8 @@ class TestClient(unittest.TestCase):
             "region_filter": ""
         }'''
 
-        r = self.client.post('/get_rivers', data=request, content_type='application/json')
+        r = self.client.post('/get_rivers', data=request,
+                             content_type='application/json')
         assert r.status_code == 200
 
     def test_get_lakes(self):
@@ -105,9 +111,33 @@ class TestClient(unittest.TestCase):
             "id_only": false
         }'''
 
-        r = self.client.post('/get_lakes', data=request, content_type='application/json')
+        r = self.client.post('/get_lakes', data=request,
+                             content_type='application/json')
 
         print('LAKES: ')
+
+        assert r.status_code == 200
+
+    def test_get_water_mask(self):
+        request = '''{
+            "region": {
+                "geodesic": false,
+                "type": "Polygon",
+                "coordinates": [[
+                    [5.986862182617186, 52.517369933821186],
+                    [6.030635833740234, 52.517369933821186],
+                    [6.030635833740234, 52.535439735112924],
+                    [5.986862182617186, 52.535439735112924],
+                    [5.986862182617186, 52.517369933821186]
+                ]]
+            },
+            "use_url": false,
+            "start": "2017-01-01",
+            "stop": "2017-06-01"
+        }'''
+
+        r = self.client.post('/get_water_mask', data=request,
+                             content_type='application/json')
 
         assert r.status_code == 200
 

@@ -339,14 +339,17 @@ def api_get_water_mask():
     https://code.earthengine.google.com/4dd0b18aa43bfabf4845753dc7c6ba5c
     """
 
-    use_url = request.json['use_url']
-    region = ee.Geometry(request.json['region'])
+    j = request.json
+
+    use_url = j['use_url']
+    region = ee.Geometry(j['region'])
     bands = ['B3', 'B8']  # green, nir
-    start = '2017-01-01'
-    stop = '2018-01-01'
-    percentile = 10
-    ndwi_threshold = 0
-    scale_vector = 10
+    start = j['start']
+    stop = j['stop']
+
+    percentile = j['percentile'] if 'percentile' in j else 10
+    ndwi_threshold = j['ndwi_threshold'] if 'ndwi_threshold' in j else 0
+    scale = j['scale'] if 'scale' in j else 10
 
     # filter Sentinel-2 images
     images = ee.ImageCollection('COPERNICUS/S2') \
@@ -369,11 +372,11 @@ def api_get_water_mask():
         .mask(water_mask) \
         .reduceToVectors(**{
             "geometry": region,
-            "scale": scale_vector / 2
+            "scale": scale / 2
         })
 
     water_mask_vector = water_mask_vector.toList(10000)\
-        .map(lambda f: ee.Feature(f).simplify(scale_vector))
+        .map(lambda f: ee.Feature(f).simplify(scale))
 
     water_mask_vector = ee.FeatureCollection(water_mask_vector)
 
