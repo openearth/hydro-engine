@@ -261,7 +261,7 @@ def api_get_bathymetry():
         m = image.getMapId({
             'min': colorbar_min[dataset],
             'max': colorbar_max[dataset],
-            'palette': palettes.pycpt2ee()
+            'palette': palettes.pycpt2gee(pycpt_name='gmt/GMT_ocean.cpt')
         })
 
         mapid = m.get('mapid')
