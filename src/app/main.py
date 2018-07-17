@@ -86,6 +86,9 @@ index = ee.FeatureCollection('users/gena/HydroEngine/hybas_lev06_v1c_index')
 monthly_water = ee.ImageCollection('JRC/GSW1_0/MonthlyHistory')
 
 
+# do this in main, because it downloads it from the internet
+gmt_ocean = palettes.pycpt2gee(pycpt_name='gmt/GMT_ocean.cpt')
+
 def get_upstream_catchments(level):
     if level != 6:
         raise Exception(
@@ -261,7 +264,7 @@ def api_get_bathymetry():
         m = image.getMapId({
             'min': colorbar_min[dataset],
             'max': colorbar_max[dataset],
-            'palette': palettes.pycpt2gee(pycpt_name='gmt/GMT_ocean.cpt')
+            'palette': gmt_ocean
         })
 
         mapid = m.get('mapid')
