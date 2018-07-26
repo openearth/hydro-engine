@@ -5,6 +5,8 @@ import logging
 
 from . import main
 
+from . import palettes
+
 logger = logging.getLogger(__name__)
 
 
@@ -148,6 +150,14 @@ class TestClient(unittest.TestCase):
         # r = client.get('/get_catchments')
         # assert r.status_code == 200
         # assert 'Welcome' in r.data.decode('utf-8')
+
+
+class TestPalettes(unittest.TestCase):
+    def test_cpt(self):
+        palette = palettes.pycpt2gee()
+        assert palette.endswith('faffff')
+
+
 
 
 if __name__ == '__main__':

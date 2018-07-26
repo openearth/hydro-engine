@@ -4,3 +4,5 @@ gunicorn==19.7.1
 earthengine-api==0.1.117
 requests==2.12.4
 oauth2client==4.1.2
+git+https://github.com/j08lue/pycpt#b45f720d09da79bcd567c5cbba9a554b0a7cc1d9
+matplotlib==2.2.2
