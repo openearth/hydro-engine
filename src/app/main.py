@@ -16,14 +16,12 @@ import flask_cors
 
 import ee
 
-# TODO: get rid of this, this is an ugly hack
-sys.path.append(os.getcwd())
 
-import palettes
+from . import palettes
 
-import config
+from . import config
 
-import error_handler
+from . import  error_handler
 
 logger = logging.getLogger(__name__)
 
