@@ -15,9 +15,11 @@ from flask import request
 import flask_cors
 
 import ee
-import palettes
 
+# TODO: get rid of this, this is an ugly hack
 sys.path.append(os.getcwd())
+
+import palettes
 
 import config
 
