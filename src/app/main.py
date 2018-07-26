@@ -18,10 +18,8 @@ import ee
 
 
 from . import palettes
-
 from . import config
-
-from . import  error_handler
+from . import error_handler
 
 logger = logging.getLogger(__name__)
 
