@@ -4,6 +4,7 @@ import unittest
 import logging
 
 import main
+
 import palettes
 
 logger = logging.getLogger(__name__)
