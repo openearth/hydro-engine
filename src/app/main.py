@@ -16,10 +16,8 @@ import flask_cors
 
 import ee
 
-
-from . import palettes
-from . import config
-from . import error_handler
+import config
+import error_handler
 
 logger = logging.getLogger(__name__)
 
@@ -82,10 +80,6 @@ bathymetry = {
 index = ee.FeatureCollection('users/gena/HydroEngine/hybas_lev06_v1c_index')
 
 monthly_water = ee.ImageCollection('JRC/GSW1_0/MonthlyHistory')
-
-
-# do this in main, because it downloads it from the internet
-gmt_ocean = palettes.pycpt2gee(pycpt_name='gmt/GMT_ocean.cpt')
 
 def get_upstream_catchments(level):
     if level != 6:
@@ -257,12 +251,16 @@ def api_get_bathymetry():
 
 
     def generate_image_info(image):
+        # import palettes
+        # gmt_ocean = palettes.pycpt2gee(pycpt_name='gmt/GMT_ocean.cpt')
+
         """generate url and tokens for image"""
         image = ee.Image(image)
         m = image.getMapId({
             'min': colorbar_min[dataset],
             'max': colorbar_max[dataset],
-            'palette': gmt_ocean
+            'palette': ['064273', '76b6c4', '7fcdff', '1da2d8', 'def3f6']
+            # 'palette': gmt_ocean
         })
 
         mapid = m.get('mapid')
