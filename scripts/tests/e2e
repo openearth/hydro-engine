@@ -1,0 +1,21 @@
+#!/bin/bash
+if [ -n "$1" ]
+then
+    server=$1
+else
+    server=http://hydro-engine.appspot.com
+fi
+
+echo testing with server ${server}
+
+echo get_bathymetry
+http post ${server}/get_bathymetry dataset=vaklodingen begin_date=2010-01-01 end_date=2011-01-01
+
+echo get_raster
+http post ${server}/get_raster region:=@./data/tests/myanmar.json variable=dem cell_size=1000 crs=EPSG:4326 region_filter=catchments-upstream catchment_level:=6
+
+echo get_lake_time_series
+http --print=h post ${server}/get_lake_time_series lake_id:=100 variable=water_area scale=100000
+
+echo get_catchments
+http --print=h post ${server}/get_catchments region:=@./data/tests/myanmar.json region_filter='' catchment_level:=5
