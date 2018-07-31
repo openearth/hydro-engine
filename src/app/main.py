@@ -42,11 +42,11 @@ app.register_blueprint(error_handler.error_handler)
 
 # if 'privatekey.json' is defined in environmental variable - write it to file
 if 'key' in os.environ:
-  print('Writing privatekey.json from environmental variable ...')
-  content = base64.b64decode(os.environ['key']).decode('ascii')
+    print('Writing privatekey.json from environmental variable ...')
+    content = base64.b64decode(os.environ['key']).decode('ascii')
 
-  with open(config.EE_PRIVATE_KEY_FILE, 'w') as f:
-    f.write(content)
+    with open(config.EE_PRIVATE_KEY_FILE, 'w') as f:
+        f.write(content)
 
 # Initialize the EE API.
 # Use our App Engine service account's credentials.
@@ -387,6 +387,7 @@ def api_get_water_mask():
 
 @app.route('/get_catchments', methods=['GET', 'POST'])
 def api_get_catchments():
+    logger.info(region)
     region = ee.Geometry(request.json['region'])
     region_filter = request.json['region_filter']
     catchment_level = request.json['catchment_level']
@@ -444,7 +445,7 @@ def api_get_rivers():
         selected_catchments.aggregate_array('HYBAS_ID'))
 
     logger.debug("Number of catchments: %s" %
-                  repr(upstream_catchment_ids.size().getInfo()))
+                 repr(upstream_catchment_ids.size().getInfo()))
 
     # query rivers
     selected_rivers = rivers \
@@ -453,15 +454,15 @@ def api_get_rivers():
 
     # filter upstream branches
     if 'filter_upstream_gt' in request.json:
-       filter_upstream = int(request.json['filter_upstream_gt'])
-       logger.debug(
-           'Filtering upstream branches, limiting by {0} number of cells'.format(
-               filter_upstream))
-       selected_rivers = selected_rivers.filter(
-           ee.Filter.gte('UP_CELLS', filter_upstream))
+        filter_upstream = int(request.json['filter_upstream_gt'])
+        logger.debug(
+            'Filtering upstream branches, limiting by {0} number of cells'.format(
+                filter_upstream))
+        selected_rivers = selected_rivers.filter(
+            ee.Filter.gte('UP_CELLS', filter_upstream))
 
     logger.debug("Number of river branches: %s"
-                  % selected_rivers.aggregate_count('ARCID').getInfo())
+                 % selected_rivers.aggregate_count('ARCID').getInfo())
 
     # create response
     url = selected_rivers.getDownloadURL('json')
@@ -665,5 +666,8 @@ def server_error(e):
 if __name__ == '__main__':
     # This is used when running locally. Gunicorn is used to run the
     # application on Google App Engine. See entrypoint in app.yaml.
+    logger.debug('test')
+
+    app.logger.setLevel(logging.DEBUG)
     app.run(host='127.0.0.1', port=8080, debug=True)
 # [END app]
