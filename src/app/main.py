@@ -260,7 +260,6 @@ def api_get_bathymetry():
             'min': colorbar_min[dataset],
             'max': colorbar_max[dataset],
             'palette': ['064273', '76b6c4', '7fcdff', '1da2d8', 'def3f6']
-            # 'palette': gmt_ocean
         })
 
         mapid = m.get('mapid')
@@ -387,7 +386,6 @@ def api_get_water_mask():
 
 @app.route('/get_catchments', methods=['GET', 'POST'])
 def api_get_catchments():
-    logger.info(region)
     region = ee.Geometry(request.json['region'])
     region_filter = request.json['region_filter']
     catchment_level = request.json['catchment_level']
@@ -666,8 +664,6 @@ def server_error(e):
 if __name__ == '__main__':
     # This is used when running locally. Gunicorn is used to run the
     # application on Google App Engine. See entrypoint in app.yaml.
-    logger.debug('test')
-
     app.logger.setLevel(logging.DEBUG)
     app.run(host='127.0.0.1', port=8080, debug=True)
 # [END app]
