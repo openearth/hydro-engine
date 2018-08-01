@@ -6,11 +6,14 @@ import hydroengine as he
 # download MENA.json using users/gena/eo-reservoirs/MENA_waterbodies.js
 # gs://hydro-engine/waterbodies/MENA.json
 
-with open('../../data/reservoirs/MENA.json') as f:
+path = '../../data/reservoirs/HydroLAKES_Niger_not_MENA.json'
+# path = '../../data/reservoirs/MENA.json'
+
+with open(path) as f:
   j = json.loads(f.read())
 
 
-bad = ['152']
+bad = [152, 156, 180279]
 
 for lake_id in [f['properties']['Hylak_id'] for f in j['features']]:
   path = '../../data/reservoirs/surface-water-area-v1/water_area_' + str(lake_id).zfill(15) + '.csv'

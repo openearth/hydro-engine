@@ -33,8 +33,12 @@ def download_water_mask(region, path):
         r.raw.decode_content = True
         shutil.copyfileobj(r.raw, f)
 
-def get_water_mask(region):
-    data = {'type': 'get_water_mask', 'region': region, 'use_url': False}
+def get_water_mask(region, start, stop, percentile=10, ndwi_threshold=0, scale=10):
+    data = {'type': 'get_water_mask', 'region': region, 
+           'start': start, 'stop': stop, 'percentile': percentile, 
+           'ndwi_threshold': ndwi_threshold, 'scale': scale,
+           'use_url': False}
+
     r = requests.post(SERVER_URL + '/get_water_mask', json=data)
     _check_request(r)
 
@@ -43,6 +47,7 @@ def get_water_mask(region):
 def download_catchments(region, path, region_filter, catchment_level):
     data = {'type': 'get_catchments', 'region': region, 'dissolve': True,
             'region_filter': region_filter, 'catchment_level': catchment_level}
+
     r = requests.post(SERVER_URL + '/get_catchments', json=data)
     _check_request(r)
 

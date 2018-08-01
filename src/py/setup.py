@@ -3,7 +3,7 @@ from setuptools import setup
 setup(
     name="hydroengine",
     packages=['hydroengine'],
-    version="0.0.19",
+    version="0.0.21",
     install_requires=['requests>=2.12'],
     entry_points={
         'console_scripts': [
