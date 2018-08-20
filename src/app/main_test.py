@@ -3,9 +3,9 @@ import json
 import unittest
 import logging
 
-import main
+from . import main
 
-import palettes
+# import palettes
 
 logger = logging.getLogger(__name__)
 
