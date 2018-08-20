@@ -7,8 +7,8 @@ import tempfile
 import os
 import os.path
 
-# SERVER_URL = 'http://localhost:8080'
-SERVER_URL = 'http://hydro-engine.appspot.com'
+SERVER_URL = 'http://localhost:8080'
+# SERVER_URL = 'http://hydro-engine.appspot.com'
 
 
 def download_water_mask(region, path):
@@ -52,12 +52,16 @@ def download_rivers(region, path, filter_upstream_gt, region_filter, catchment_l
 
     r = requests.post(SERVER_URL + '/get_rivers', json=data)
 
+    with open(path, 'w') as f:
+        f.write(r.text)
+        f.close()
+
     # download from url
-    r = requests.get(json.loads(r.text)['url'], stream=True)
-    if r.status_code == 200:
-        with open(path, 'wb') as f:
-            r.raw.decode_content = True
-            shutil.copyfileobj(r.raw, f)
+    # r = requests.get(json.loads(r.text)['url'], stream=True)
+    # if r.status_code == 200:
+    #    with open(path, 'wb') as f:
+    #        r.raw.decode_content = True
+    #        shutil.copyfileobj(r.raw, f)
 
 def get_lake_time_series(lake_id, variable, scale=0):
     data = {'type': 'get_lake_time_series', 'lake_id': lake_id,

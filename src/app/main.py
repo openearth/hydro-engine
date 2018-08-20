@@ -463,10 +463,17 @@ def api_get_rivers():
     logger.debug("Number of river branches: %s"
                   % selected_rivers.aggregate_count('ARCID').getInfo())
 
-    # create response
-    url = selected_rivers.getDownloadURL('json')
 
-    data = {'url': url}
+    # BUG in EE? getDownloadURL skips geometry
+    # logger.debug('%s' % selected_rivers.limit(1).getInfo())
+    # logger.debug('%s' % selected_rivers.limit(1).getDownloadURL('json'))
+
+    # create response
+    # url = selected_rivers.getDownloadURL('json')
+
+    # data = {'url': url}
+
+    data = selected_rivers.getInfo()
 
     return Response(json.dumps(data), status=200, mimetype='application/json')
 
