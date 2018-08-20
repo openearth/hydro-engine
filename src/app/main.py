@@ -256,12 +256,12 @@ def api_get_bathymetry():
 
         """generate url and tokens for image"""
         image = ee.Image(image)
-        m = image.getMapId({
+        m = image.visualize({
             'min': colorbar_min[dataset],
             'max': colorbar_max[dataset],
-            'palette': ['064273', '76b6c4', '7fcdff', '1da2d8', 'def3f6']
+            'palette': ['#064273', '#76b6c4', '#7fcdff', '#1da2d8', '#def3f6']
             # 'palette': gmt_ocean
-        })
+        }).getMapId()
 
         mapid = m.get('mapid')
         token = m.get('token')
