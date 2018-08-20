@@ -3,7 +3,11 @@ import json
 import unittest
 import logging
 
-from . import main
+# py 2.7 / 3.6 hacks, is there a better way?
+import sys,os
+sys.path.append(os.getcwd())
+
+import main
 
 # import palettes
 
