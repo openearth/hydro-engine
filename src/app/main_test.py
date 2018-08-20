@@ -152,10 +152,10 @@ class TestClient(unittest.TestCase):
         # assert 'Welcome' in r.data.decode('utf-8')
 
 
-class TestPalettes(unittest.TestCase):
-    def test_cpt(self):
-        palette = palettes.pycpt2gee()
-        assert palette.endswith('faffff')
+# class TestPalettes(unittest.TestCase):
+#    def test_cpt(self):
+#        palette = palettes.pycpt2gee()
+#        assert palette.endswith('faffff')
 
 
 
