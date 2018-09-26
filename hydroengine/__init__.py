@@ -15,8 +15,11 @@ import tempfile
 import os
 import os.path
 
-# SERVER_URL = 'http://localhost:8080'
-SERVER_URL = 'http://hydro-engine.appspot.com'
+SERVER_URL = 'http://localhost:8080'
+
+
+# SERVER_URL = 'http://hydro-engine.appspot.com'
+# SERVER_URL = 'https://dev3-dot-hydro-engine.appspot.com'
 
 
 def _check_request(r):
@@ -30,7 +33,7 @@ def _check_request(r):
 
 
 def download_water_mask(region, path):
-    data = {'type': 'get_water_mask', 'region': region, 'use_url': True}
+    data = {'region': region, 'use_url': True}
     r = requests.post(SERVER_URL + '/get_water_mask', json=data)
     _check_request(r)
 
@@ -41,19 +44,33 @@ def download_water_mask(region, path):
         r.raw.decode_content = True
         shutil.copyfileobj(r.raw, f)
 
-def get_water_mask(region, start, stop, percentile=10, ndwi_threshold=0, scale=10):
-    data = {'type': 'get_water_mask', 'region': region, 
-           'start': start, 'stop': stop, 'percentile': percentile, 
-           'ndwi_threshold': ndwi_threshold, 'scale': scale,
-           'use_url': False}
+
+def get_water_mask(region, start, stop, percentile=10, ndwi_threshold=0,
+                   scale=10):
+    data = {'region': region,
+            'start': start, 'stop': stop, 'percentile': percentile,
+            'ndwi_threshold': ndwi_threshold, 'scale': scale,
+            'use_url': False}
 
     r = requests.post(SERVER_URL + '/get_water_mask', json=data)
     _check_request(r)
 
     return r.text
 
+
+def get_water_network(region, start, stop, scale=10):
+    data = {'region': region,
+            'start': start, 'stop': stop, 'scale': scale,
+            'use_url': False}
+
+    r = requests.post(SERVER_URL + '/get_water_mask_network', json=data)
+    _check_request(r)
+
+    return r.text
+
+
 def download_catchments(region, path, region_filter, catchment_level):
-    data = {'type': 'get_catchments', 'region': region, 'dissolve': True,
+    data = {'region': region, 'dissolve': True,
             'region_filter': region_filter, 'catchment_level': catchment_level}
 
     r = requests.post(SERVER_URL + '/get_catchments', json=data)
@@ -63,8 +80,9 @@ def download_catchments(region, path, region_filter, catchment_level):
         file.write(r.text)
 
 
-def download_rivers(region, path, filter_upstream_gt, region_filter, catchment_level):
-    data = {'type': 'get_rivers', 'region': region,
+def download_rivers(region, path, filter_upstream_gt, region_filter,
+                    catchment_level):
+    data = {'region': region,
             'region_filter': region_filter, 'catchment_level': catchment_level}
 
     if filter_upstream_gt:
@@ -84,8 +102,9 @@ def download_rivers(region, path, filter_upstream_gt, region_filter, catchment_l
     #        r.raw.decode_content = True
     #        shutil.copyfileobj(r.raw, f)
 
+
 def get_lake_time_series(lake_id, variable, scale=0):
-    data = {'type': 'get_lake_time_series', 'lake_id': lake_id,
+    data = {'lake_id': lake_id,
             'variable': variable, 'scale': scale}
 
     r = requests.post(SERVER_URL + '/get_lake_time_series', json=data)
@@ -104,7 +123,7 @@ def download_lake_variable(lake_id, variable, path, scale):
 
 
 def get_lakes(region, id_only=False):
-    data = {'type': 'get_lakes', 'region': region, 'id_only': id_only}
+    data = {'region': region, 'id_only': id_only}
 
     r = requests.post(SERVER_URL + '/get_lakes', json=data)
     _check_request(r)
@@ -120,7 +139,7 @@ def get_lakes(region, id_only=False):
 
 
 def get_lake_ids(region):
-    data = {'type': 'get_lakes', 'region': region, 'id_only': True}
+    data = {'region': region, 'id_only': True}
 
     r = requests.post(SERVER_URL + '/get_lakes', json=data)
     _check_request(r)
@@ -129,7 +148,7 @@ def get_lake_ids(region):
 
 
 def get_lake_by_id(lake_id):
-    data = {'type': 'get_lake_by_id', 'lake_id': lake_id}
+    data = {'lake_id': lake_id}
 
     r = requests.post(SERVER_URL + '/get_lake_by_id', json=data)
     _check_request(r)
@@ -146,7 +165,7 @@ def download_lakes(region, path, id_only):
 
         return
 
-    data = {'type': 'get_lakes', 'region': region, 'id_only': id_only}
+    data = {'region': region, 'id_only': id_only}
 
     r = requests.post(SERVER_URL + '/get_lakes', json=data)
     _check_request(r)
@@ -164,7 +183,7 @@ def download_raster(region, path, variable, cell_size, crs, region_filter,
                     catchment_level):
     path_name = os.path.splitext(path)[0]
 
-    data = {'type': 'get_raster', 'region': region, 'variable': variable,
+    data = {'region': region, 'variable': variable,
             'cell_size': cell_size, 'crs': crs, 'region_filter': region_filter,
             'catchment_level': catchment_level}
 
@@ -205,7 +224,7 @@ def download_raster(region, path, variable, cell_size, crs, region_filter,
 
 
 def download_raster_profile(region, path, variable, scale):
-    data = {'type': 'get_raster_profile', 'polyline': region,
+    data = {'polyline': region,
             'variable': variable, 'scale': scale}
 
     r = requests.post(SERVER_URL + '/get_raster_profile', json=data)
@@ -266,7 +285,8 @@ def main():
                             'catchments-upstream',
                             'catchments-intersection'
                         ],
-                        default='catchments-upstream',  # backward-compatibility
+                        default='catchments-upstream',
+                        # backward-compatibility
                         help='Defines strategy to use when selecting features or clipping rasters (region | catchments-upstream | catchments-intersection)')
 
     parser.add_argument('--id-only', action='store_true',
@@ -278,12 +298,10 @@ def main():
     parser.add_argument('--filter-upstream-gt', metavar='VALUE',
                         help='When downloading rivers, limit number of upstream cells to VALUE')
 
-
-
     args = parser.parse_args()
 
     region_path = args.region
-    filter_upstream_gt = args.filter_upstream_gt # rivers
+    filter_upstream_gt = args.filter_upstream_gt  # rivers
     id_only = args.id_only
     scale = args.scale
     region_filter = args.region_filter
