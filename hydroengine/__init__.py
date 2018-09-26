@@ -4,7 +4,7 @@
 
 __author__ = """Gennadii Donchyts"""
 __email__ = 'gennadiy.donchyts@gmail.com'
-__version__ = '__version__ = '0.0.24''
+__version__ = '0.0.26'
 
 import argparse
 import requests
@@ -15,10 +15,10 @@ import tempfile
 import os
 import os.path
 
-SERVER_URL = 'http://localhost:8080'
+# SERVER_URL = 'http://localhost:8080'
 
 
-# SERVER_URL = 'http://hydro-engine.appspot.com'
+SERVER_URL = 'http://hydro-engine.appspot.com'
 # SERVER_URL = 'https://dev3-dot-hydro-engine.appspot.com'
 
 
