@@ -44,4 +44,3 @@ Supported functionality:
    * landuse [-] - land use type, based on MODIS 500m
    * LAI01...LAI12 - leaf area index monthly climatology, source: [eartH2Observe](http://www.earth2observe.eu/)
 
-
