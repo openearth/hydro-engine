@@ -15,9 +15,7 @@ import tempfile
 import os
 import os.path
 
-# SERVER_URL = 'http://localhost:8080'
-
-
+# SERVER_URL = 'http://127.0.0.1:8080'
 SERVER_URL = 'http://hydro-engine.appspot.com'
 # SERVER_URL = 'https://dev3-dot-hydro-engine.appspot.com'
 
@@ -33,49 +31,43 @@ def _check_request(r):
 
 
 def download_water_mask(region, path):
-    data = {'region': region, 'use_url': True}
-    r = requests.post(SERVER_URL + '/get_water_mask', json=data)
-    _check_request(r)
+    water_mask = get_water_mask(region)
 
-    # download from url
-    r = requests.get(json.loads(r.text)['url'], stream=True)
-    _check_request(r)
-    with open(path, 'wb') as f:
-        r.raw.decode_content = True
-        shutil.copyfileobj(r.raw, f)
+    with open(path, 'w') as f:
+        f.write(json.dumps(water_mask))
 
 
-def get_water_mask(region, start, stop, scale=10):
-    data = {'region': region,
-            'start': start, 'stop': stop, 'scale': scale,
-            'use_url': False}
+def get_water_mask(region, start='2010-01-01', stop='2015-01-01', scale=10,
+                   crs='EPSG:4326'):
+
+    data = {'region': region, 'start': start, 'stop': stop, 'scale': scale,
+            'crs': crs, 'use_url': False}
 
     r = requests.post(SERVER_URL + '/get_water_mask', json=data)
     _check_request(r)
 
-    return r.text
+    return json.loads(r.text)
 
 
-def get_water_network(region, start, stop, scale=10):
-    data = {'region': region,
-            'start': start, 'stop': stop, 'scale': scale,
-            'use_url': False}
+def get_water_network(region, start, stop, scale=10, crs='EPSG:4326'):
+    data = {'region': region, 'start': start, 'stop': stop, 'scale': scale,
+            'crs': crs, 'use_url': False}
 
     r = requests.post(SERVER_URL + '/get_water_network', json=data)
     _check_request(r)
 
-    return r.text
+    return json.loads(r.text)
 
 
-def get_water_network_properties(region, start, stop, scale=10):
-    data = {'region': region,
-            'start': start, 'stop': stop, 'scale': scale,
-            'use_url': False}
+def get_water_network_properties(region, start, stop, scale=10,
+                                 crs='EPSG:4326', step=100):
+    data = {'region': region, 'start': start, 'stop': stop, 'scale': scale,
+            'crs': crs, 'step': step, 'use_url': False}
 
     r = requests.post(SERVER_URL + '/get_water_network_properties', json=data)
     _check_request(r)
 
-    return r.text
+    return json.loads(r.text)
 
 
 def download_catchments(region, path, region_filter, catchment_level):
