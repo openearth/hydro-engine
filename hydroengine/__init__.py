@@ -4,7 +4,7 @@
 
 __author__ = """Gennadii Donchyts"""
 __email__ = 'gennadiy.donchyts@gmail.com'
-__version__ = '0.0.29'
+__version__ = '0.0.30'
 
 import argparse
 import requests
