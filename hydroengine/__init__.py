@@ -17,6 +17,8 @@ import os.path
 
 # SERVER_URL = 'http://127.0.0.1:8080'
 SERVER_URL = 'http://hydro-engine.appspot.com'
+
+
 # SERVER_URL = 'https://dev3-dot-hydro-engine.appspot.com'
 
 
@@ -39,7 +41,6 @@ def download_water_mask(region, path):
 
 def get_water_mask(region, start='2010-01-01', stop='2015-01-01', scale=10,
                    crs='EPSG:4326'):
-
     data = {'region': region, 'start': start, 'stop': stop, 'scale': scale,
             'crs': crs, 'use_url': False}
 
@@ -152,6 +153,15 @@ def get_lake_by_id(lake_id):
     data = {'lake_id': lake_id}
 
     r = requests.post(SERVER_URL + '/get_lake_by_id', json=data)
+    _check_request(r)
+
+    return json.loads(r.text)
+
+
+def get_feature_collection(region, asset):
+    data = {'region': region, 'asset': asset}
+
+    r = requests.post(SERVER_URL + '/get_feature_collection', json=data)
     _check_request(r)
 
     return json.loads(r.text)
